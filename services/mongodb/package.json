@@ -1,0 +1,30 @@
+{
+  "name": "mongodb-management-scripts",
+  "version": "1.0.0",
+  "description": "MongoDB index and sharding management scripts for e-commerce platform",
+  "main": "manage-indexes.js",
+  "scripts": {
+    "create-indexes": "node manage-indexes.js create-all",
+    "analyze-products": "node query-analyzer.js batch products",
+    "analyze-orders": "node query-analyzer.js batch orders",
+    "analyze-users": "node query-analyzer.js batch users",
+    "list-indexes": "node manage-indexes.js list",
+    "help": "node manage-indexes.js"
+  },
+  "keywords": [
+    "mongodb",
+    "indexes",
+    "sharding",
+    "performance",
+    "optimization"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "mongodb": "^6.0.0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

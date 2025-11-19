@@ -1,0 +1,271 @@
+# ============================================
+# LaunchpadMERN - Root .gitignore
+# ============================================
+
+# ============================================
+# Environment Variables & Secrets
+# ============================================
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+*.env
+**/.env
+**/.env.local
+**/.env.development
+**/.env.production
+**/.env.test
+frontend/.env
+frontend/.env.local
+frontend/.env.development
+frontend/.env.production
+frontend/.env.test
+services/auth/.env
+services/products/.env
+services/categories/.env
+services/users/.env
+services/orders/.env
+
+services/**/.env.local
+services/**/.env.development
+services/**/.env.production
+services/**/.env.test
+# ============================================
+# Node.js Dependencies
+# ============================================
+node_modules/
+frontend/node_modules/
+**/node_modules/
+
+services/auth/node_modules/
+services/products/node_modules/
+services/categories/node_modules/
+services/users/node_modules/
+services/orders/node_modules/
+services/logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
+
+# ============================================
+# Package Manager Lock Files (optional)
+# ============================================
+# Uncomment if you want to ignore lock files
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# ============================================
+# Logs
+# ============================================
+logs/
+*.log
+services/logs/*.log
+api-gateway/logs/*.log
+**/*.log
+
+# ============================================
+# Operating System Files
+# ============================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# ============================================
+# IDE & Editor Files
+# ============================================
+# VSCode
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ============================================
+# Next.js (Frontend)
+# ============================================
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.cache/
+frontend/*.tsbuildinfo
+frontend/next-env.d.ts
+
+# ============================================
+# Build Outputs
+# ============================================
+dist/
+build/
+*.tsbuildinfo
+*.buildinfo
+
+# ============================================
+# Testing
+# ============================================
+coverage/
+*.coverage
+.nyc_output/
+.jest/
+__tests__/__snapshots__/
+
+# ============================================
+# MongoDB
+# ============================================
+*.mongodb
+mongodb-data/
+data/db/
+
+# ============================================
+# Docker
+# ============================================
+docker-compose.override.yml
+*.dockerignore
+
+# ============================================
+# Temporary Files
+# ============================================
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+*.cache
+
+# ============================================
+# Process IDs
+# ============================================
+*.pid
+*.seed
+*.pid.lock
+services/pids/
+
+# ============================================
+# SSL Certificates (Keep in secure location)
+# ============================================
+*.pem
+*.key
+*.crt
+*.cert
+ssl/
+certs/
+
+# ============================================
+# Backup Files
+# ============================================
+*.sql
+*.sqlite
+*.sqlite3
+backup/
+backups/
+*.dump
+
+# ============================================
+# Uploads & User Generated Content
+# ============================================
+uploads/
+public/uploads/
+static/uploads/
+
+# ============================================
+# API Documentation (Generated)
+# ============================================
+api-docs/
+docs/generated/
+
+# ============================================
+# Package Managers
+# ============================================
+.npm
+.yarn
+.pnpm-store
+
+# ============================================
+# Miscellaneous
+# ============================================
+.git-credentials
+.vagrant/
+Vagrantfile.local
+
+# ============================================
+# Production Build Artifacts
+# ============================================
+frontend/.vercel
+frontend/.netlify
+.serverless/
+.fusebox/
+
+# ============================================
+# TypeScript
+# ============================================
+*.tsbuildinfo
+
+# ============================================
+# Python (if any)
+# ============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# ============================================
+# Archives
+# ============================================
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# ============================================
+# Keep These Files
+# ============================================
+# Force include important config files
+!.gitignore
+!.gitattributes
+!.editorconfig
+!.prettierrc
+!.eslintrc.js
+!.env.example
+!README.md
