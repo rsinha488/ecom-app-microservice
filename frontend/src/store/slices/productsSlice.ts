@@ -52,9 +52,16 @@ export const fetchProducts = createAsyncThunk(
   } = {}, { rejectWithValue }) => {
     try {
       const response = await productsAPI.getProducts(params);
-      return response.data;
+      // New API format: response.data.data contains the actual data
+      return {
+        products: response.data.data.products,
+        count: response.data.data.count,
+        meta: response.data.meta
+      };
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch products');
+      // Error is already handled by interceptor
+      const message = error.message || 'Failed to fetch products';
+      return rejectWithValue(message);
     }
   }
 );
@@ -64,9 +71,12 @@ export const fetchProductById = createAsyncThunk(
   async (id: string, { rejectWithValue }) => {
     try {
       const response = await productsAPI.getProductById(id);
-      return response.data;
+      // New API format: response.data.data.product contains the product
+      return response.data.data.product;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch product');
+      // Error is already handled by interceptor
+      const message = error.message || 'Failed to fetch product';
+      return rejectWithValue(message);
     }
   }
 );
@@ -76,9 +86,15 @@ export const searchProducts = createAsyncThunk(
   async (query: string, { rejectWithValue }) => {
     try {
       const response = await productsAPI.searchProducts(query);
-      return response.data;
+      // New API format: response.data.data contains products and count
+      return {
+        products: response.data.data.products,
+        count: response.data.data.count
+      };
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Search failed');
+      // Error is already handled by interceptor
+      const message = error.message || 'Search failed';
+      return rejectWithValue(message);
     }
   }
 );
@@ -111,10 +127,16 @@ const productsSlice = createSlice({
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
         state.loading = false;
-        const payload: any = action.payload;
-        state.items = payload.results || payload;
-        if (payload.pagination) {
-          state.pagination = payload.pagination;
+        state.items = action.payload.products;
+        state.pagination.total = action.payload.count;
+        // Update pagination if meta is provided
+        if (action.payload.meta) {
+          state.pagination = {
+            page: action.payload.meta.page || state.pagination.page,
+            limit: action.payload.meta.limit || state.pagination.limit,
+            total: action.payload.meta.total || action.payload.count,
+            pages: action.payload.meta.pages || Math.ceil(action.payload.count / state.pagination.limit)
+          };
         }
       })
       .addCase(fetchProducts.rejected, (state, action) => {
@@ -145,8 +167,8 @@ const productsSlice = createSlice({
       })
       .addCase(searchProducts.fulfilled, (state, action) => {
         state.loading = false;
-        const payload: any = action.payload;
-        state.items = Array.isArray(payload) ? payload : payload.results || [];
+        state.items = action.payload.products;
+        state.pagination.total = action.payload.count;
       })
       .addCase(searchProducts.rejected, (state, action) => {
         state.loading = false;

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { ORDER_STATUS } = require('../constants/orderStatus');
 
 const orderItemSchema = new mongoose.Schema({
   productId: {
@@ -38,9 +39,16 @@ const orderSchema = new mongoose.Schema({
     min: 0
   },
   status: {
-    type: String,
-    enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
-    default: 'pending'
+    type: Number,
+    enum: [
+      ORDER_STATUS.PENDING,      // 1
+      ORDER_STATUS.PROCESSING,   // 2
+      ORDER_STATUS.SHIPPED,      // 3
+      ORDER_STATUS.DELIVERED,    // 4
+      ORDER_STATUS.CANCELLED     // 5
+    ],
+    default: ORDER_STATUS.PENDING,
+    required: true
   },
   shippingAddress: {
     street: String,

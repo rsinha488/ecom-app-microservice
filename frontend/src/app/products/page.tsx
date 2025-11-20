@@ -1,41 +1,107 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { fetchProducts, setFilters, clearFilters } from '@/store/slices/productsSlice';
+import { fetchProducts, searchProducts, clearFilters } from '@/store/slices/productsSlice';
 import ProductCard from '@/components/product/ProductCard';
-import Header from '@/components/layout/Header';
-import { FiFilter, FiX, FiSearch, FiGrid, FiList } from 'react-icons/fi';
+import { FiSearch, FiGrid, FiList, FiX } from 'react-icons/fi';
+import { Category } from '@/types';
 
 export default function ProductsPage() {
   const dispatch = useAppDispatch();
-  const { items: products, loading, error, filters } = useAppSelector((state) => state.products);
-  const [showFilters, setShowFilters] = useState(false);
+  const { items, loading, error } = useAppSelector((state) => state.products);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [isSearching, setIsSearching] = useState(false);
 
+  // Fetch categories on mount
   useEffect(() => {
-    dispatch(fetchProducts(filters));
-  }, [dispatch, filters]);
+    fetchCategories();
+  }, []);
 
-  const handleFilterChange = (filterName: string, value: any) => {
-    dispatch(setFilters({ [filterName]: value }));
-  };
+  // Memoized category fetch function
+  const fetchCategories = useCallback(async () => {
+    try {
+      const response = await fetch('/api/categories');
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data.categories || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+    }
+  }, []);
 
-  const handleClearFilters = () => {
-    dispatch(clearFilters());
-    setSearchQuery('');
-  };
+  // Fetch products when category changes
+  useEffect(() => {
+    if (!isSearching) {
+      if (selectedCategory) {
+        dispatch(fetchProducts({ category: selectedCategory }));
+      } else {
+        dispatch(fetchProducts({}));
+      }
+    }
+  }, [dispatch, selectedCategory, isSearching]);
 
-  const handleSearch = (e: React.FormEvent) => {
+  // Memoized category select handler
+  const handleCategoryChange = useCallback((categorySlug: string) => {
+    setSelectedCategory(categorySlug);
+    setSearchQuery(''); // Clear search when changing category
+    setIsSearching(false);
+  }, []);
+
+  // Memoized search handler with debouncing
+  const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(setFilters({ search: searchQuery }));
-  };
+
+    if (searchQuery.trim()) {
+      setIsSearching(true);
+      setSelectedCategory(''); // Clear category when searching
+      dispatch(searchProducts(searchQuery.trim()));
+    } else {
+      setIsSearching(false);
+      dispatch(clearFilters());
+    }
+  }, [searchQuery, dispatch]);
+
+  // Memoized search input change handler
+  const handleSearchInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+
+    // Clear search results if input is empty
+    if (!value.trim() && isSearching) {
+      setIsSearching(false);
+      dispatch(clearFilters());
+      dispatch(fetchProducts({}));
+    }
+  }, [isSearching, dispatch]);
+
+  // Memoized clear filters handler
+  const handleClearFilters = useCallback(() => {
+    setSearchQuery('');
+    setSelectedCategory('');
+    setIsSearching(false);
+    dispatch(clearFilters());
+    dispatch(fetchProducts({}));
+  }, [dispatch]);
+
+  // Memoized active filters indicator
+  const hasActiveFilters = useMemo(() => {
+    return searchQuery.trim() !== '' || selectedCategory !== '';
+  }, [searchQuery, selectedCategory]);
+
+  // Memoized products list
+  const productsList = useMemo(() => {
+    return items?.map((product) => (
+      <ProductCard key={product._id} product={product} />
+    ));
+  }, [items]);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">
@@ -54,20 +120,44 @@ export default function ProductsPage() {
                   type="text"
                   placeholder="Search products..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  onChange={handleSearchInputChange}
+                  className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('');
+                      if (isSearching) {
+                        setIsSearching(false);
+                        dispatch(clearFilters());
+                        dispatch(fetchProducts({}));
+                      }
+                    }}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <FiX className="h-5 w-5" />
+                  </button>
+                )}
               </div>
             </form>
 
-            {/* Filter Toggle */}
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-            >
-              <FiFilter className="h-5 w-5 mr-2" />
-              Filters
-            </button>
+            {/* Category Dropdown */}
+            <div className="w-full md:w-64">
+              <select
+                value={selectedCategory}
+                onChange={(e) => handleCategoryChange(e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                disabled={loading}
+              >
+                <option value="">All Categories</option>
+                {categories.map((category) => (
+                  <option key={category._id} value={category.slug}>
+                    {category.name} {category.productCount > 0 && `(${category.productCount})`}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* View Mode Toggle */}
             <div className="hidden sm:flex border border-gray-300 rounded-lg">
@@ -76,8 +166,9 @@ export default function ProductsPage() {
                 className={`px-4 py-2.5 ${
                   viewMode === 'grid'
                     ? 'bg-indigo-600 text-white'
-                    : 'bg-white text-gray-700'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
                 } rounded-l-lg transition`}
+                title="Grid view"
               >
                 <FiGrid className="h-5 w-5" />
               </button>
@@ -86,103 +177,54 @@ export default function ProductsPage() {
                 className={`px-4 py-2.5 ${
                   viewMode === 'list'
                     ? 'bg-indigo-600 text-white'
-                    : 'bg-white text-gray-700'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
                 } rounded-r-lg transition`}
+                title="List view"
               >
                 <FiList className="h-5 w-5" />
               </button>
             </div>
           </div>
 
-          {/* Filters Panel */}
-          {showFilters && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {/* Category Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Category
-                  </label>
-                  <select
-                    value={filters.category || ''}
-                    onChange={(e) => handleFilterChange('category', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          {/* Active Filters */}
+          {hasActiveFilters && (
+            <div className="mt-4 flex items-center gap-2 flex-wrap">
+              <span className="text-sm text-gray-600">Active filters:</span>
+              {searchQuery && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm">
+                  Search: "{searchQuery}"
+                  <button
+                    onClick={() => {
+                      setSearchQuery('');
+                      if (isSearching) {
+                        setIsSearching(false);
+                        dispatch(clearFilters());
+                        dispatch(fetchProducts({}));
+                      }
+                    }}
+                    className="hover:text-indigo-900"
                   >
-                    <option value="">All Categories</option>
-                    <option value="electronics">Electronics</option>
-                    <option value="clothing">Clothing</option>
-                    <option value="books">Books</option>
-                    <option value="home">Home & Garden</option>
-                  </select>
-                </div>
-
-                {/* Price Range */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Min Price
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={filters.minPrice || ''}
-                    onChange={(e) => handleFilterChange('minPrice', e.target.value)}
-                    placeholder="$0"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Max Price
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={filters.maxPrice || ''}
-                    onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
-                    placeholder="$1000"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  />
-                </div>
-
-                {/* Sort */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Sort By
-                  </label>
-                  <select
-                    value={filters.sort || ''}
-                    onChange={(e) => handleFilterChange('sort', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    <FiX className="h-4 w-4" />
+                  </button>
+                </span>
+              )}
+              {selectedCategory && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm">
+                  Category: {categories.find(c => c.slug === selectedCategory)?.name}
+                  <button
+                    onClick={() => handleCategoryChange('')}
+                    className="hover:text-indigo-900"
                   >
-                    <option value="">Default</option>
-                    <option value="price_asc">Price: Low to High</option>
-                    <option value="price_desc">Price: High to Low</option>
-                    <option value="name_asc">Name: A to Z</option>
-                    <option value="newest">Newest First</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* In Stock Filter */}
-              <div className="mt-4 flex items-center justify-between">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={filters.inStock || false}
-                    onChange={(e) => handleFilterChange('inStock', e.target.checked)}
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">In Stock Only</span>
-                </label>
-
-                <button
-                  onClick={handleClearFilters}
-                  className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-                >
-                  Clear All Filters
-                </button>
-              </div>
+                    <FiX className="h-4 w-4" />
+                  </button>
+                </span>
+              )}
+              <button
+                onClick={handleClearFilters}
+                className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+              >
+                Clear all
+              </button>
             </div>
           )}
         </div>
@@ -204,26 +246,34 @@ export default function ProductsPage() {
         {/* Products Grid */}
         {!loading && !error && (
           <>
-            {products.length === 0 ? (
+            {items.length === 0 ? (
               <div className="text-center py-20">
                 <FiSearch className="mx-auto h-16 w-16 text-gray-400 mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
                   No products found
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Try adjusting your filters or search query
+                  {hasActiveFilters
+                    ? 'Try adjusting your filters or search query'
+                    : 'No products available at the moment'}
                 </p>
-                <button
-                  onClick={handleClearFilters}
-                  className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition"
-                >
-                  Clear Filters
-                </button>
+                {hasActiveFilters && (
+                  <button
+                    onClick={handleClearFilters}
+                    className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition"
+                  >
+                    Clear Filters
+                  </button>
+                )}
               </div>
             ) : (
               <>
-                <div className="mb-4 text-sm text-gray-600">
-                  Showing {products.length} product{products.length !== 1 ? 's' : ''}
+                <div className="mb-4 flex items-center justify-between">
+                  <p className="text-sm text-gray-600">
+                    Showing {items.length} product{items.length !== 1 ? 's' : ''}
+                    {isSearching && ` for "${searchQuery}"`}
+                    {selectedCategory && ` in ${categories.find(c => c.slug === selectedCategory)?.name}`}
+                  </p>
                 </div>
                 <div
                   className={
@@ -232,9 +282,7 @@ export default function ProductsPage() {
                       : 'space-y-4'
                   }
                 >
-                  {products.map((product) => (
-                    <ProductCard key={product._id} product={product} />
-                  ))}
+                  {productsList}
                 </div>
               </>
             )}

@@ -1,0 +1,60 @@
+{
+  "validProduct": {
+    "name": "Wireless Bluetooth Headphones",
+    "description": "Premium noise-cancelling wireless headphones with 30-hour battery life",
+    "price": 129.99,
+    "category": "Electronics",
+    "stock": 50,
+    "imageUrl": "https://example.com/headphones.jpg",
+    "sku": "ELEC-HEAD-001",
+    "brand": "AudioTech",
+    "tags": ["wireless", "bluetooth", "noise-cancelling"]
+  },
+  "productWithMinimalData": {
+    "name": "USB-C Cable",
+    "description": "High-speed USB-C to USB-C cable",
+    "price": 12.99,
+    "category": "Accessories",
+    "stock": 100
+  },
+  "outOfStockProduct": {
+    "name": "Out of Stock Item",
+    "description": "This product is currently unavailable",
+    "price": 49.99,
+    "category": "Electronics",
+    "stock": 0
+  },
+  "existingProduct": {
+    "_id": "691d99ff4a0e73e090b83cd8",
+    "name": "Existing Product",
+    "description": "An existing product in the database",
+    "price": 99.99,
+    "category": "Electronics",
+    "stock": 25,
+    "inStock": true,
+    "rating": 4.5,
+    "reviewCount": 123
+  },
+  "invalidProducts": {
+    "missingName": {
+      "description": "Product without name",
+      "price": 50.00,
+      "category": "Test",
+      "stock": 10
+    },
+    "negativePrice": {
+      "name": "Invalid Price Product",
+      "description": "Product with negative price",
+      "price": -10.00,
+      "category": "Test",
+      "stock": 10
+    },
+    "negativeStock": {
+      "name": "Invalid Stock Product",
+      "description": "Product with negative stock",
+      "price": 50.00,
+      "category": "Test",
+      "stock": -5
+    }
+  }
+}

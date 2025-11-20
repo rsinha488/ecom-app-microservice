@@ -2,62 +2,58 @@
 
 import { useEffect, useState } from 'react';
 import { Order } from '@/types';
-import { FiPackage, FiTruck, FiCheckCircle, FiXCircle, FiClock } from 'react-icons/fi';
+import { FiPackage, FiWifi, FiWifiOff, FiXCircle } from 'react-icons/fi';
+import { useOrderSocket } from '@/hooks/useOrderSocket';
+import { getAccessToken } from '@/lib/cookies';
+import OrderStatusBadge from '@/components/orders/OrderStatusBadge';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+
+  // Initialize WebSocket connection
+  const { isConnected, lastEvent } = useOrderSocket(accessToken);
 
   useEffect(() => {
+    // Get access token from cookie
+    const token = getAccessToken();
+    setAccessToken(token);
     fetchOrders();
   }, []);
+
+  // Update orders when socket events occur
+  useEffect(() => {
+    if (lastEvent) {
+      fetchOrders(); // Refresh orders list when an event occurs
+    }
+  }, [lastEvent]);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/orders');
+
       if (!response.ok) {
-        throw new Error('Failed to fetch orders');
+        const errorData = await response.json();
+        if (response.status === 401) {
+          throw new Error('Please log in to view your orders');
+        }
+        throw new Error(errorData.error || 'Failed to fetch orders');
       }
+
       const data = await response.json();
-      setOrders(data.orders || []);
+      // New standardized format: data.data.orders contains the orders
+      setOrders(data.data?.orders || data.orders || []);
     } catch (err: any) {
+      console.error('Orders fetch error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusIcon = (status: Order['status']) => {
-    switch (status) {
-      case 'pending':
-        return <FiClock className="h-5 w-5 text-yellow-600" />;
-      case 'processing':
-        return <FiPackage className="h-5 w-5 text-blue-600" />;
-      case 'shipped':
-        return <FiTruck className="h-5 w-5 text-purple-600" />;
-      case 'delivered':
-        return <FiCheckCircle className="h-5 w-5 text-green-600" />;
-      case 'cancelled':
-        return <FiXCircle className="h-5 w-5 text-red-600" />;
-    }
-  };
-
-  const getStatusColor = (status: Order['status']) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'processing':
-        return 'bg-blue-100 text-blue-800';
-      case 'shipped':
-        return 'bg-purple-100 text-purple-800';
-      case 'delivered':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-    }
-  };
 
   if (loading) {
     return (
@@ -78,7 +74,15 @@ export default function OrdersPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
             <FiXCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
-            <p className="text-red-800 font-medium">{error}</p>
+            <p className="text-red-800 font-medium mb-4">{error}</p>
+            {error.includes('log in') && (
+              <a
+                href="/auth/login"
+                className="inline-block bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition"
+              >
+                Go to Login
+              </a>
+            )}
           </div>
         </div>
       </div>
@@ -111,7 +115,24 @@ export default function OrdersPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">My Orders</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">My Orders</h1>
+
+          {/* WebSocket Connection Status */}
+          <div className="flex items-center space-x-2">
+            {isConnected ? (
+              <>
+                <FiWifi className="h-5 w-5 text-green-600 animate-pulse" />
+                <span className="text-sm text-green-600 font-medium">Live Updates Active</span>
+              </>
+            ) : (
+              <>
+                <FiWifiOff className="h-5 w-5 text-gray-400" />
+                <span className="text-sm text-gray-500">Connecting...</span>
+              </>
+            )}
+          </div>
+        </div>
 
         <div className="space-y-6">
           {orders.map((order) => (
@@ -137,15 +158,8 @@ export default function OrdersPage() {
                       ${order.totalAmount.toFixed(2)}
                     </p>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    {getStatusIcon(order.status)}
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                        order.status
-                      )}`}
-                    >
-                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                    </span>
+                  <div>
+                    <OrderStatusBadge status={order.status} size="md" />
                   </div>
                 </div>
               </div>

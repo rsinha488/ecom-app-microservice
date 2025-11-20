@@ -5,10 +5,13 @@ const CATEGORIES_API_URL = process.env.NEXT_PUBLIC_CATEGORIES_URL || 'http://loc
 export async function GET(request: NextRequest) {
   try {
     // Fetch categories from categories service
-    const response = await fetch(`${CATEGORIES_API_URL}/api/v1/categories`);
+    const response = await fetch(`${CATEGORIES_API_URL}/api/v1/categories`, {
+      cache: 'no-store',
+    });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({ message: 'Unknown error' }));
+      console.error('[Categories API] Error response:', error);
       return NextResponse.json(
         { error: error.message || 'Failed to fetch categories' },
         { status: response.status }
@@ -16,9 +19,14 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
-    return NextResponse.json({ categories: data.results || [] });
+
+    // Handle new standardized format: data.data.categories or fallback to old formats
+    const categories = data.data?.categories || data.categories || (Array.isArray(data) ? data : []);
+
+    console.log('[Categories API] Success, categories count:', categories.length);
+    return NextResponse.json({ categories });
   } catch (error: any) {
-    console.error('Fetch categories error:', error);
+    console.error('[Categories API] Exception:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -1,0 +1,48 @@
+{
+  "validUser": {
+    "email": "testuser@example.com",
+    "password": "SecurePass123!",
+    "name": "Test User",
+    "given_name": "Test",
+    "family_name": "User"
+  },
+  "adminUser": {
+    "email": "admin@example.com",
+    "password": "AdminPass123!",
+    "name": "Admin User",
+    "given_name": "Admin",
+    "family_name": "User",
+    "roles": ["admin", "user"]
+  },
+  "existingUser": {
+    "_id": "507f1f77bcf86cd799439011",
+    "email": "existing@example.com",
+    "name": "Existing User",
+    "given_name": "Existing",
+    "family_name": "User",
+    "roles": ["user"],
+    "isActive": true,
+    "email_verified": true
+  },
+  "invalidEmails": [
+    "not-an-email",
+    "missing@domain",
+    "@nodomain.com",
+    "spaces in@email.com",
+    "double@@email.com"
+  ],
+  "weakPasswords": [
+    "123",
+    "pass",
+    "12345678",
+    "password",
+    "qwerty"
+  ],
+  "validOAuthRequest": {
+    "client_id": "ecommerce-client",
+    "redirect_uri": "http://localhost:3006/callback",
+    "response_type": "code",
+    "scope": "openid profile email",
+    "state": "random-state-string"
+  }
+}

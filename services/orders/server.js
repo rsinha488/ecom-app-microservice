@@ -4,11 +4,14 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
+const http = require('http');
 const connectDB = require('./config/db');
 const orderRoutesV1 = require('./routes/v1/orderRoutes');
 const { validateVersion } = require('./middleware/apiVersion');
+const { initializeSocket } = require('./config/socket');
 
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 3004;
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -88,6 +91,9 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Initialize Socket.io
+initializeSocket(server);
+
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received: closing server');
@@ -97,10 +103,11 @@ process.on('SIGTERM', () => {
   });
 });
 
-const server = app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Orders service running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
   console.log(`API Version: v1`);
+  console.log(`WebSocket server ready on port ${PORT}`);
 });
 
 module.exports = server;

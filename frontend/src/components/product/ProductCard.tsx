@@ -44,7 +44,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           )}
 
           {/* Stock Badge */}
-          {!product.inStock && (
+          {product.stock <= 0 && (
             <div className="absolute top-3 left-3 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
               Out of Stock
             </div>
@@ -57,7 +57,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             </div>
           )}
 
-          {/* Wishlist Button */}
+          {/* Wishlist Button
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -67,7 +67,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             className="absolute top-3 right-3 bg-white p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-red-50"
           >
             <FiHeart className="h-5 w-5 text-gray-700 hover:text-red-500" />
-          </button>
+          </button> */}
         </div>
 
         {/* Product Info */}
@@ -123,9 +123,9 @@ export default function ProductCard({ product }: ProductCardProps) {
 
             <button
               onClick={handleAddToCart}
-              disabled={!product.inStock}
+              disabled={product.stock <= 0}
               className={`p-3 rounded-lg transition-all duration-300 ${
-                product.inStock
+                product.stock > 0
                   ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md hover:shadow-lg'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}

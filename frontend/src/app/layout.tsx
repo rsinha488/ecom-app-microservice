@@ -4,6 +4,7 @@ import './globals.css';
 import { Providers } from './providers';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import MainLayout from '@/components/layout/MainLayout';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -36,7 +37,7 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen bg-gray-50">
         <Providers>
-          {children}
+          <MainLayout>{children}</MainLayout>
           <ToastContainer
             position="top-right"
             autoClose={3000}

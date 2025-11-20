@@ -51,7 +51,8 @@ export const login = createAsyncThunk(
         return rejectWithValue(data.error || 'Login failed');
       }
 
-      return data.user;
+      // New standardized format: data.data?.user or data.user (backward compatible)
+      return data.data?.user || data.user;
     } catch (error: any) {
       return rejectWithValue(error.message || 'Login failed');
     }
@@ -77,7 +78,8 @@ export const register = createAsyncThunk(
         return rejectWithValue(data.error || 'Registration failed');
       }
 
-      return data;
+      // New standardized format: data.data?.user or data.user (backward compatible)
+      return data.data?.user || data.user || data;
     } catch (error: any) {
       return rejectWithValue(error.message || 'Registration failed');
     }
@@ -102,7 +104,8 @@ export const checkAuth = createAsyncThunk(
       }
 
       const data = await response.json();
-      return data.user;
+      // New standardized format: data.data?.user or data.user (backward compatible)
+      return data.data?.user || data.user;
     } catch (error: any) {
       return rejectWithValue(error.message || 'Authentication check failed');
     }

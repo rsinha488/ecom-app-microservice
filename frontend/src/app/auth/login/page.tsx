@@ -53,7 +53,8 @@ export default function LoginPage() {
 
     try {
       await dispatch(login(formData)).unwrap();
-      router.push('/products');
+      // Don't manually navigate - let the useEffect handle it
+      // This prevents race conditions and duplicate navigation
     } catch (err) {
       // Error is handled by Redux
       console.error('Login failed:', err);
@@ -185,7 +186,7 @@ export default function LoginPage() {
             </div>
 
             {/* Remember Me & Forgot Password */}
-            <div className="flex items-center justify-between">
+            {/* <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <input
                   id="remember-me"
@@ -203,7 +204,7 @@ export default function LoginPage() {
                   Forgot password?
                 </a>
               </div>
-            </div>
+            </div> */}
 
             {/* Submit Button */}
             <div>

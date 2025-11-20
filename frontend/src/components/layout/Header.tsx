@@ -53,7 +53,7 @@ export default function Header() {
                 <FiShoppingBag className="h-6 w-6 text-white" />
               </div>
               <span className="text-xl font-bold text-gray-900 hidden sm:block">
-                ShopHub
+                E-Shop
               </span>
             </Link>
           </div>
@@ -65,12 +65,6 @@ export default function Header() {
               className="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium transition"
             >
               Products
-            </Link>
-            <Link
-              href="/categories"
-              className="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium transition"
-            >
-              Categories
             </Link>
             <Link
               href="/orders"
@@ -95,10 +89,10 @@ export default function Header() {
               )}
             </Link>
 
-            {/* Wishlist */}
+            {/* Wishlist
             <button className="p-2 text-gray-700 hover:text-indigo-600 transition hidden sm:block">
               <FiHeart className="h-6 w-6" />
-            </button>
+            </button> */}
 
             {/* User Menu */}
             {isAuthenticated ? (
@@ -123,14 +117,14 @@ export default function Header() {
                       onClick={() => setUserMenuOpen(false)}
                     />
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
-                      <Link
+                      {/* <Link
                         href="/profile"
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         onClick={() => setUserMenuOpen(false)}
                       >
                         <FiUser className="mr-3 h-4 w-4" />
                         Profile
-                      </Link>
+                      </Link> */}
                       <Link
                         href="/orders"
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -182,13 +176,6 @@ export default function Header() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Products
-            </Link>
-            <Link
-              href="/categories"
-              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Categories
             </Link>
             <Link
               href="/orders"

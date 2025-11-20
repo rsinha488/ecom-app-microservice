@@ -91,7 +91,7 @@ export interface Order {
   orderNumber: string;
   items: OrderItem[];
   totalAmount: number;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status: number; // Numeric status code (1-5): 1=Pending, 2=Processing, 3=Shipped, 4=Delivered, 5=Cancelled
   shippingAddress: ShippingAddress;
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   paymentMethod: 'credit_card' | 'debit_card' | 'paypal' | 'cash_on_delivery';

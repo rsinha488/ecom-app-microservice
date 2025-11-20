@@ -8,6 +8,8 @@ const { setVersionHeaders } = require('../../middleware/apiVersion');
 router.use(setVersionHeaders);
 
 // Public endpoints - anyone can view products
+// IMPORTANT: /search must come before /:id to avoid route conflicts
+router.get('/search', optionalAuth, productController.searchProducts);
 router.get('/', optionalAuth, productController.getAllProducts);
 router.get('/:id', optionalAuth, productController.getProductById);
 
