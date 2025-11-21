@@ -18,4 +18,9 @@ router.post('/', verifyAccessToken, requireRole('admin'), productController.crea
 router.put('/:id', verifyAccessToken, requireRole('admin'), productController.updateProduct);
 router.delete('/:id', verifyAccessToken, requireRole('admin'), productController.deleteProduct);
 
+// Stock management endpoints - inter-service communication
+// TODO: Add service-to-service authentication middleware
+router.post('/:id/reserve', productController.reserveStock);
+router.post('/:id/release', productController.releaseStock);
+
 module.exports = router;

@@ -9,6 +9,7 @@ const connectDB = require('./config/db');
 const orderRoutesV1 = require('./routes/v1/orderRoutes');
 const { validateVersion } = require('./middleware/apiVersion');
 const { initializeSocket } = require('./config/socket');
+const { initializeProducer, createTopics, disconnectProducer } = require('./config/kafka');
 
 const app = express();
 const server = http.createServer(app);
@@ -94,20 +95,69 @@ app.use((err, req, res, next) => {
 // Initialize Socket.io
 initializeSocket(server);
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received: closing server');
-  server.close(() => {
-    console.log('Server closed');
-    process.exit(0);
-  });
-});
+// Initialize Kafka
+async function initializeKafka() {
+  try {
+    console.log('🚀 Initializing Kafka producer...');
 
-server.listen(PORT, () => {
+    // Create required topics
+    await createTopics([
+      'order.created',
+      'order.status.changed',
+      'order.cancelled',
+      'order.completed',
+      'inventory.reserve',
+      'inventory.release'
+    ]);
+
+    // Initialize producer
+    await initializeProducer();
+
+    console.log('✅ Kafka producer initialized successfully');
+  } catch (error) {
+    console.error('❌ Failed to initialize Kafka:', error.message);
+    console.warn('⚠️  Orders service will continue without Kafka integration');
+    // Don't exit - allow service to run without Kafka if needed
+  }
+}
+
+// Graceful shutdown
+async function gracefulShutdown(signal) {
+  console.log(`${signal} received: closing server gracefully`);
+
+  try {
+    // Disconnect Kafka producer
+    await disconnectProducer();
+
+    // Close HTTP server
+    server.close(() => {
+      console.log('✅ Server closed successfully');
+      process.exit(0);
+    });
+
+    // Force exit after 10 seconds
+    setTimeout(() => {
+      console.error('❌ Forced shutdown after timeout');
+      process.exit(1);
+    }, 10000);
+  } catch (error) {
+    console.error('❌ Error during shutdown:', error.message);
+    process.exit(1);
+  }
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Start server
+server.listen(PORT, async () => {
   console.log(`Orders service running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
   console.log(`API Version: v1`);
   console.log(`WebSocket server ready on port ${PORT}`);
+
+  // Initialize Kafka after server starts
+  await initializeKafka();
 });
 
 module.exports = server;

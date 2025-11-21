@@ -7,6 +7,8 @@ const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 const productRoutesV1 = require('./routes/v1/productRoutes');
 const { validateVersion } = require('./middleware/apiVersion');
+const { initializeConsumer } = require('./services/kafkaConsumer');
+const { disconnectConsumer } = require('./config/kafka');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -90,19 +92,54 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received: closing server');
-  server.close(() => {
-    console.log('Server closed');
-    process.exit(0);
-  });
-});
+// Initialize Kafka consumer
+async function initializeKafka() {
+  try {
+    console.log('🚀 Initializing Kafka consumer for stock management...');
+    await initializeConsumer();
+    console.log('✅ Kafka consumer initialized successfully');
+  } catch (error) {
+    console.error('❌ Failed to initialize Kafka consumer:', error.message);
+    console.warn('⚠️  Products service will continue without Kafka integration');
+    // Don't exit - allow service to run without Kafka if needed
+  }
+}
 
-const server = app.listen(PORT, () => {
+// Graceful shutdown
+async function gracefulShutdown(signal) {
+  console.log(`${signal} received: closing server gracefully`);
+
+  try {
+    // Disconnect Kafka consumer
+    await disconnectConsumer();
+
+    // Close HTTP server
+    server.close(() => {
+      console.log('✅ Server closed successfully');
+      process.exit(0);
+    });
+
+    // Force exit after 10 seconds
+    setTimeout(() => {
+      console.error('❌ Forced shutdown after timeout');
+      process.exit(1);
+    }, 10000);
+  } catch (error) {
+    console.error('❌ Error during shutdown:', error.message);
+    process.exit(1);
+  }
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+const server = app.listen(PORT, async () => {
   console.log(`Products service running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
   console.log(`API Version: v1`);
+
+  // Initialize Kafka consumer after server starts
+  await initializeKafka();
 });
 
 module.exports = server;

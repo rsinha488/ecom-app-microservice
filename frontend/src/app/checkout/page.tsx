@@ -23,7 +23,7 @@ export default function CheckoutPage() {
     zipCode: '',
     country: '',
     // Payment
-    paymentMethod: 'credit_card',
+    paymentMethod: 'cash_on_delivery',
     // Optional fields
     notes: '',
   });
@@ -261,6 +261,7 @@ export default function CheckoutPage() {
                       checked={formData.paymentMethod === 'credit_card'}
                       onChange={handleInputChange}
                       className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+                      disabled
                     />
                     <span className="ml-3 text-gray-900 font-medium">Credit Card</span>
                   </label>
@@ -273,6 +274,7 @@ export default function CheckoutPage() {
                       checked={formData.paymentMethod === 'debit_card'}
                       onChange={handleInputChange}
                       className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+                      disabled
                     />
                     <span className="ml-3 text-gray-900 font-medium">Debit Card</span>
                   </label>
@@ -285,6 +287,7 @@ export default function CheckoutPage() {
                       checked={formData.paymentMethod === 'paypal'}
                       onChange={handleInputChange}
                       className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+                      disabled
                     />
                     <span className="ml-3 text-gray-900 font-medium">PayPal</span>
                   </label>

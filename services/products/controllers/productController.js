@@ -578,3 +578,233 @@ exports.searchProducts = async (req, res) => {
     );
   }
 };
+
+/**
+ * Reserve stock for order
+ *
+ * Decreases product stock atomically for order processing.
+ * This endpoint is called by the Orders service (or Kafka consumer internally).
+ *
+ * @route POST /api/v1/products/:id/reserve
+ * @access Private (inter-service only)
+ * @param {Object} req - Express request object
+ * @param {string} req.params.id - Product ID
+ * @param {Object} req.body - Reservation data
+ * @param {number} req.body.quantity - Quantity to reserve
+ * @param {string} req.body.orderId - Order ID for tracking
+ * @param {Object} res - Express response object
+ * @returns {Object} 200 - Stock reserved successfully
+ * @returns {Object} 400 - Invalid quantity or insufficient stock
+ * @returns {Object} 404 - Product not found
+ * @returns {Object} 500 - Server error
+ */
+exports.reserveStock = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { quantity, orderId } = req.body;
+
+    // Validate required fields
+    if (!quantity || quantity <= 0) {
+      return res.status(400).json(
+        ErrorResponse.validation(
+          'Invalid quantity',
+          { quantity: 'Quantity must be a positive number' }
+        )
+      );
+    }
+
+    if (!orderId) {
+      return res.status(400).json(
+        ErrorResponse.validation(
+          'Order ID is required',
+          { orderId: 'Order ID must be provided for stock reservation' }
+        )
+      );
+    }
+
+    // Attempt atomic stock reservation
+    const product = await Product.findOneAndUpdate(
+      {
+        _id: id,
+        stock: { $gte: quantity }, // Only update if stock sufficient
+        isActive: true
+      },
+      {
+        $inc: { stock: -quantity }
+      },
+      {
+        new: true,
+        runValidators: true
+      }
+    );
+
+    // Handle reservation failure
+    if (!product) {
+      const existingProduct = await Product.findById(id);
+
+      if (!existingProduct) {
+        return res.status(404).json(
+          ErrorResponse.notFound('Product', id)
+        );
+      }
+
+      if (!existingProduct.isActive) {
+        return res.status(400).json(
+          ErrorResponse.validation(
+            'Product is not active',
+            { product: 'Cannot reserve stock for inactive products' }
+          )
+        );
+      }
+
+      // Insufficient stock
+      return res.status(400).json(
+        ErrorResponse.validation(
+          'Insufficient stock',
+          {
+            productId: id,
+            requestedQuantity: quantity,
+            availableStock: existingProduct.stock,
+            message: `Only ${existingProduct.stock} units available`
+          }
+        )
+      );
+    }
+
+    // Update inStock flag if needed
+    if (product.stock === 0 && product.inStock) {
+      await Product.findByIdAndUpdate(id, { inStock: false });
+    }
+
+    // Return success response
+    res.status(200).json(
+      ErrorResponse.success(
+        {
+          productId: id,
+          productName: product.name,
+          reservedQuantity: quantity,
+          newStock: product.stock,
+          orderId
+        },
+        'Stock reserved successfully'
+      )
+    );
+
+  } catch (error) {
+    console.error('Reserve stock error:', error);
+
+    if (error.name === 'CastError') {
+      return res.status(400).json(
+        ErrorResponse.validation(
+          'Invalid product ID format',
+          { id: 'Product ID must be a valid MongoDB ObjectID' }
+        )
+      );
+    }
+
+    res.status(500).json(
+      ErrorResponse.serverError(
+        'Failed to reserve stock',
+        'Please try again later'
+      )
+    );
+  }
+};
+
+/**
+ * Release stock (restore inventory)
+ *
+ * Increases product stock for order cancellation or failed reservation.
+ * This endpoint is called when orders are cancelled.
+ *
+ * @route POST /api/v1/products/:id/release
+ * @access Private (inter-service only)
+ * @param {Object} req - Express request object
+ * @param {string} req.params.id - Product ID
+ * @param {Object} req.body - Release data
+ * @param {number} req.body.quantity - Quantity to release
+ * @param {string} req.body.orderId - Order ID for tracking
+ * @param {Object} res - Express response object
+ * @returns {Object} 200 - Stock released successfully
+ * @returns {Object} 400 - Invalid quantity
+ * @returns {Object} 404 - Product not found
+ * @returns {Object} 500 - Server error
+ */
+exports.releaseStock = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { quantity, orderId } = req.body;
+
+    // Validate required fields
+    if (!quantity || quantity <= 0) {
+      return res.status(400).json(
+        ErrorResponse.validation(
+          'Invalid quantity',
+          { quantity: 'Quantity must be a positive number' }
+        )
+      );
+    }
+
+    if (!orderId) {
+      return res.status(400).json(
+        ErrorResponse.validation(
+          'Order ID is required',
+          { orderId: 'Order ID must be provided for stock release' }
+        )
+      );
+    }
+
+    // Atomically increase stock
+    const product = await Product.findOneAndUpdate(
+      { _id: id },
+      {
+        $inc: { stock: quantity },
+        $set: { inStock: true } // Mark as in stock
+      },
+      {
+        new: true,
+        runValidators: true
+      }
+    );
+
+    // Handle product not found
+    if (!product) {
+      return res.status(404).json(
+        ErrorResponse.notFound('Product', id)
+      );
+    }
+
+    // Return success response
+    res.status(200).json(
+      ErrorResponse.success(
+        {
+          productId: id,
+          productName: product.name,
+          releasedQuantity: quantity,
+          newStock: product.stock,
+          orderId
+        },
+        'Stock released successfully'
+      )
+    );
+
+  } catch (error) {
+    console.error('Release stock error:', error);
+
+    if (error.name === 'CastError') {
+      return res.status(400).json(
+        ErrorResponse.validation(
+          'Invalid product ID format',
+          { id: 'Product ID must be a valid MongoDB ObjectID' }
+        )
+      );
+    }
+
+    res.status(500).json(
+      ErrorResponse.serverError(
+        'Failed to release stock',
+        'Please try again later'
+      )
+    );
+  }
+};

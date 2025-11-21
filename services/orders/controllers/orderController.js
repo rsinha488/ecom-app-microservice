@@ -22,6 +22,12 @@ const {
   getStatusLabel,
   getAllStatuses
 } = require('../constants/orderStatus');
+const {
+  publishOrderCreated,
+  publishOrderStatusChanged,
+  publishOrderCancelled,
+  publishOrderCompleted
+} = require('../services/kafkaProducer');
 
 /**
  * Get all orders
@@ -299,9 +305,18 @@ exports.createOrder = async (req, res) => {
     // Save order to database
     const newOrder = await order.save();
 
-    // Emit order created event for real-time notifications
+    // Emit order created event for real-time notifications (WebSocket)
     // This triggers WebSocket notifications to admin dashboard
     orderEvents.emit(ORDER_EVENTS.CREATED, newOrder);
+
+    // Publish to Kafka for inter-service communication (async, non-blocking)
+    // This triggers stock reservation in Products service
+    setImmediate(() => {
+      publishOrderCreated(newOrder).catch(err => {
+        console.error('Failed to publish order created to Kafka:', err.message);
+        // Don't fail the request - Kafka publish is async
+      });
+    });
 
     // Return success response with created order
     res.status(201).json(
@@ -565,23 +580,47 @@ exports.updateOrderStatus = async (req, res) => {
       { new: true, runValidators: true }
     );
 
-    // Emit status changed event for real-time notifications
-    // This triggers WebSocket updates to all connected clients
-    orderEvents.emit(ORDER_EVENTS.STATUS_CHANGED, {
+    // Prepare event data
+    const statusChangeData = {
       order,
       oldStatus,
       newStatus,
       oldStatusLabel: getStatusLabel(oldStatus),
       newStatusLabel: getStatusLabel(newStatus)
+    };
+
+    // Emit status changed event for real-time notifications (WebSocket)
+    // This triggers WebSocket updates to all connected clients
+    orderEvents.emit(ORDER_EVENTS.STATUS_CHANGED, statusChangeData);
+
+    // Publish to Kafka for inter-service communication (async, non-blocking)
+    setImmediate(() => {
+      publishOrderStatusChanged(statusChangeData).catch(err => {
+        console.error('Failed to publish status change to Kafka:', err.message);
+      });
     });
 
     // Emit specific status events for business logic triggers
     if (newStatus === ORDER_STATUS.CANCELLED) {
       // Trigger cancellation workflow (refunds, inventory restoration, etc.)
       orderEvents.emit(ORDER_EVENTS.CANCELLED, order);
+
+      // Publish to Kafka to trigger stock restoration
+      setImmediate(() => {
+        publishOrderCancelled(order).catch(err => {
+          console.error('Failed to publish order cancelled to Kafka:', err.message);
+        });
+      });
     } else if (newStatus === ORDER_STATUS.DELIVERED) {
       // Trigger completion workflow (payment settlement, review requests, etc.)
       orderEvents.emit(ORDER_EVENTS.COMPLETED, order);
+
+      // Publish to Kafka for analytics and completion workflows
+      setImmediate(() => {
+        publishOrderCompleted(order).catch(err => {
+          console.error('Failed to publish order completed to Kafka:', err.message);
+        });
+      });
     }
 
     // Return success response with updated order

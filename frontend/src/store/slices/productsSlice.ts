@@ -66,6 +66,33 @@ export const fetchProducts = createAsyncThunk(
   }
 );
 
+// Load more products (for infinite scroll)
+export const loadMoreProducts = createAsyncThunk(
+  'products/loadMoreProducts',
+  async (params: {
+    page: number;
+    limit?: number;
+    category?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    inStock?: boolean;
+    search?: string;
+    sort?: string;
+  }, { rejectWithValue }) => {
+    try {
+      const response = await productsAPI.getProducts(params);
+      return {
+        products: response.data.data.products,
+        count: response.data.data.count,
+        meta: response.data.meta
+      };
+    } catch (error: any) {
+      const message = error.message || 'Failed to load more products';
+      return rejectWithValue(message);
+    }
+  }
+);
+
 export const fetchProductById = createAsyncThunk(
   'products/fetchProductById',
   async (id: string, { rejectWithValue }) => {
@@ -171,6 +198,32 @@ const productsSlice = createSlice({
         state.pagination.total = action.payload.count;
       })
       .addCase(searchProducts.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      });
+
+    // Load More Products (Infinite Scroll)
+    builder
+      .addCase(loadMoreProducts.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(loadMoreProducts.fulfilled, (state, action) => {
+        state.loading = false;
+        // Append new products to existing items
+        state.items = [...state.items, ...action.payload.products];
+        state.pagination.total = action.payload.count;
+        // Update pagination if meta is provided
+        if (action.payload.meta) {
+          state.pagination = {
+            page: action.payload.meta.page || state.pagination.page,
+            limit: action.payload.meta.limit || state.pagination.limit,
+            total: action.payload.meta.total || action.payload.count,
+            pages: action.payload.meta.pages || Math.ceil(action.payload.count / state.pagination.limit)
+          };
+        }
+      })
+      .addCase(loadMoreProducts.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });
