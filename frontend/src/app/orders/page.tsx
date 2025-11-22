@@ -21,6 +21,9 @@ import { getAccessToken } from '@/lib/cookies';
 import OrderStatusBadge from '@/components/orders/OrderStatusBadge';
 import { getPaymentMethodDisplay } from '@/constants/paymentMethod';
 import { getPaymentStatusDisplay, getPaymentStatusColor, PaymentStatusCode } from '@/constants/paymentStatus';
+import { useAppDispatch } from '@/store';
+import { cancelOrder } from '@/store/slices/ordersSlice';
+import { toast } from 'react-toastify';
 
 // Status filter options
 const STATUS_FILTERS = [
@@ -33,6 +36,7 @@ const STATUS_FILTERS = [
 ];
 
 export default function OrdersPage() {
+  const dispatch = useAppDispatch();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +45,8 @@ export default function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'amount'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+  const [orderToCancel, setOrderToCancel] = useState<{ id: string; number: string } | null>(null);
 
   // Initialize WebSocket connection
   const { isConnected, lastEvent } = useOrderSocket(accessToken);
@@ -80,6 +86,37 @@ export default function OrdersPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCancelOrder = async (orderId: string, orderNumber: string) => {
+    // Use Next.js API route for cancellation
+    try {
+      setCancellingOrderId(orderId);
+
+      const response = await fetch(`/api/orders/${orderId}/cancel`, {
+        method: 'PATCH',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to cancel order');
+      }
+
+      const data = await response.json();
+      toast.success(`Order #${orderNumber} has been cancelled successfully`);
+
+      // Refresh orders list to show updated status
+      await fetchOrders();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to cancel order');
+    } finally {
+      setCancellingOrderId(null);
+    }
+  };
+
+  // Check if order can be cancelled (not delivered or already cancelled)
+  const canCancelOrder = (status: number) => {
+    return status === 1 || status === 2 || status === 3; // Pending, Processing, or Shipped
   };
 
   // Filter and sort orders
@@ -386,8 +423,27 @@ export default function OrdersPage() {
                         </p>
                       </div>
                     </div>
-                    <div>
+                    <div className="flex items-center space-x-3">
                       <OrderStatusBadge status={order.status} size="lg" />
+                      {canCancelOrder(order.status) && (
+                        <button
+                          onClick={() => setOrderToCancel({ id: order._id, number: order.orderNumber })}
+                          disabled={cancellingOrderId === order._id}
+                          className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium text-sm transition-all flex items-center space-x-2"
+                        >
+                          {cancellingOrderId === order._id ? (
+                            <>
+                              <FiRefreshCw className="h-4 w-4 animate-spin" />
+                              <span>Cancelling...</span>
+                            </>
+                          ) : (
+                            <>
+                              <FiXCircle className="h-4 w-4" />
+                              <span>Cancel Order</span>
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -467,6 +523,55 @@ export default function OrdersPage() {
           </div>
         )}
       </div>
+
+      {/* Confirmation Dialog */}
+      {orderToCancel && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center justify-center w-16 h-16 mx-auto bg-red-100 rounded-full mb-4">
+              <FiXCircle className="h-8 w-8 text-red-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
+              Cancel Order?
+            </h3>
+            <p className="text-gray-600 text-center mb-2">
+              Are you sure you want to cancel order
+            </p>
+            <p className="text-lg font-mono font-bold text-center text-indigo-600 mb-6">
+              #{orderToCancel.number}
+            </p>
+            <p className="text-sm text-gray-500 text-center mb-6">
+              This action cannot be undone. The order will be marked as cancelled.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setOrderToCancel(null)}
+                disabled={cancellingOrderId === orderToCancel.id}
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition disabled:opacity-50"
+              >
+                Keep Order
+              </button>
+              <button
+                onClick={() => {
+                  handleCancelOrder(orderToCancel.id, orderToCancel.number);
+                  setOrderToCancel(null);
+                }}
+                disabled={cancellingOrderId === orderToCancel.id}
+                className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 rounded-lg text-white font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              >
+                {cancellingOrderId === orderToCancel.id ? (
+                  <>
+                    <FiRefreshCw className="h-4 w-4 animate-spin" />
+                    <span>Cancelling...</span>
+                  </>
+                ) : (
+                  <span>Yes, Cancel Order</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

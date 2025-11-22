@@ -147,15 +147,20 @@ export function createEnhancedAPIClient(config: APIClientConfig): AxiosInstance 
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
 
-          // Clear user cookie to trigger middleware redirect
+          // Clear all cookies to ensure clean logout
           if (typeof window !== 'undefined') {
             document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+            document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
             document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
 
-            // Graceful redirect with session expired message
+            // Graceful redirect with session expired message and redirect parameter
             const currentPath = window.location.pathname;
-            window.location.href = `/auth/login?session=expired`;
-            // window.location.href = `/auth/login?session=expired&redirect=${encodeURIComponent(currentPath)}`;
+            // Don't redirect to login from login/register pages
+            if (currentPath !== '/auth/login' && currentPath !== '/auth/register') {
+              window.location.href = `/auth/login?session=expired&redirect=${encodeURIComponent(currentPath)}`;
+            } else {
+              window.location.href = `/auth/login?session=expired`;
+            }
           }
 
           return Promise.reject(transformError(refreshError as AxiosError));

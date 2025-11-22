@@ -15,6 +15,7 @@ router.get('/user/:userId', verifyAccessToken, requireOwnerOrAdmin, orderControl
 router.get('/:id', verifyAccessToken, orderController.getOrderById);
 router.post('/', verifyAccessToken, orderController.createOrder);
 router.put('/:id', verifyAccessToken, orderController.updateOrder);
+router.patch('/:id/cancel', verifyAccessToken, orderController.cancelOrder);
 router.patch('/:id/status', verifyAccessToken, requireRole('admin'), orderController.updateOrderStatus);
 router.delete('/:id', verifyAccessToken, requireRole('admin'), orderController.deleteOrder);
 

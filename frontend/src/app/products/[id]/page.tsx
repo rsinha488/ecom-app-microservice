@@ -241,7 +241,8 @@ export default function ProductDetailPage() {
                   <div className="flex items-center space-x-3">
                     <button
                       onClick={() => handleQuantityChange(quantity - 1)}
-                      className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition"
+                       disabled={quantity <= 1}
+                      className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       -
                     </button>
@@ -251,11 +252,12 @@ export default function ProductDetailPage() {
                       value={quantity}
                       disabled
                       // onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
-                      className="w-20 h-10 text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-20 h-10 text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent "
                     />
                     <button
                       onClick={() => handleQuantityChange(quantity + 1)}
-                      className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition"
+                      disabled={quantity >= product.stock}
+                      className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       +
                     </button>

@@ -27,7 +27,10 @@ function LoginForm() {
   useEffect(() => {
     if (isAuthenticated) {
       // Redirect to original path or products page
-      router.push(redirectPath || '/products');
+      const targetPath = redirectPath || '/products';
+      router.push(targetPath);
+      // Force a hard refresh to ensure cookies are loaded
+      router.refresh();
     }
   }, [isAuthenticated, router, redirectPath]);
 

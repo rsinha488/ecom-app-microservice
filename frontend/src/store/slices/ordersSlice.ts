@@ -52,6 +52,18 @@ export const createOrder = createAsyncThunk(
   }
 );
 
+export const cancelOrder = createAsyncThunk(
+  'orders/cancelOrder',
+  async (orderId: string, { rejectWithValue }) => {
+    try {
+      const response = await ordersAPI.cancelOrder(orderId);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to cancel order');
+    }
+  }
+);
+
 const ordersSlice = createSlice({
   name: 'orders',
   initialState,
@@ -94,6 +106,27 @@ const ordersSlice = createSlice({
         state.items.unshift(action.payload.data.order);
       })
       .addCase(createOrder.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(cancelOrder.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(cancelOrder.fulfilled, (state, action) => {
+        state.loading = false;
+        const cancelledOrder = action.payload.data.order;
+        // Update the order in the list
+        const index = state.items.findIndex(order => order._id === cancelledOrder._id);
+        if (index !== -1) {
+          state.items[index] = cancelledOrder;
+        }
+        // Update current order if it's the one being cancelled
+        if (state.currentOrder?._id === cancelledOrder._id) {
+          state.currentOrder = cancelledOrder;
+        }
+      })
+      .addCase(cancelOrder.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });

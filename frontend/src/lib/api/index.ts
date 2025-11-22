@@ -337,12 +337,3 @@ export const ordersAPI = {
   cancelOrder: (id: string) =>
     ordersClient.patch<APIResponse<{ order: Order }>>(`/api/v1/orders/${id}/cancel`),
 };
-
-// // Export all clients
-// export {
-//   authClient,
-//   productsClient,
-//   categoriesClient,
-//   usersClient,
-//   ordersClient,
-// };

@@ -65,10 +65,13 @@ export async function POST(request: NextRequest) {
       path: '/',
     });
 
-    // Return user data (without tokens for security)
+    // Return user data in standardized format (without tokens for security)
     return NextResponse.json({
       success: true,
-      user: data.user,
+      data: {
+        user: data.user,
+      },
+      message: 'Login successful'
     });
   } catch (error: any) {
     console.error('Login error:', error);

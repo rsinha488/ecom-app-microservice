@@ -809,3 +809,211 @@ exports.getOrderStatuses = async (req, res) => {
     );
   }
 };
+
+/**
+ * Cancel order
+ *
+ * Cancels an order by updating its status to CANCELLED.
+ * Users can only cancel their own orders.
+ * Validates that the order can be cancelled (not already delivered or cancelled).
+ *
+ * Cancellation rules:
+ * - Can cancel: Pending (1), Processing (2), Shipped (3)
+ * - Cannot cancel: Delivered (4), already Cancelled (5)
+ *
+ * @route PATCH /api/v1/orders/:id/cancel
+ * @access Private (user can cancel their own order, admin can cancel any order)
+ * @param {Object} req - Express request object
+ * @param {string} req.params.id - Order ID
+ * @param {Object} req.user - Authenticated user from middleware
+ * @param {string} req.user.userId - User ID from JWT token
+ * @param {Array} req.user.roles - User roles from JWT token
+ * @param {Object} res - Express response object
+ * @returns {Object} 200 - Order cancelled successfully
+ * @returns {Object} 400 - Invalid ID format
+ * @returns {Object} 403 - User not authorized to cancel this order
+ * @returns {Object} 404 - Order not found
+ * @returns {Object} 422 - Order cannot be cancelled (already delivered or cancelled)
+ * @returns {Object} 500 - Server error
+ *
+ * @example
+ * PATCH /api/v1/orders/507f1f77bcf86cd799439011/cancel
+ * Response: {
+ *   "success": true,
+ *   "message": "Order cancelled successfully",
+ *   "data": {
+ *     "order": { ... },
+ *     "oldStatus": 2,
+ *     "oldStatusLabel": "Processing",
+ *     "newStatus": 5,
+ *     "newStatusLabel": "Cancelled"
+ *   }
+ * }
+ */
+exports.cancelOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Extract user ID from JWT token (using 'sub' claim which is standard OIDC)
+    const requestingUserId = req.user.sub || req.user.userId || req.user.id;
+    const roles = req.user.roles || [];
+
+    // Find order first to check if it exists and belongs to user
+    const order = await Order.findById(id);
+
+    // Handle order not found
+    if (!order) {
+      return res.status(404).json(
+        ErrorResponse.notFound('Order', id)
+      );
+    }
+
+    // Check if user owns this order (unless admin)
+    // JWT tokens can have either numeric roles (1, 2, 3) or string roles ('user', 'admin')
+    const isAdmin = roles.some(role =>
+      role === 3 ||
+      role === 'admin' ||
+      role === 'Admin' ||
+      String(role).toLowerCase() === 'admin'
+    );
+
+    // Compare both IDs as strings to ensure proper comparison
+    const orderUserId = order.userId.toString();
+    const authUserId = requestingUserId.toString();
+
+    console.log('[Cancel Order] Authorization check:', {
+      orderUserId,
+      authUserId,
+      roles,
+      isAdmin,
+      match: orderUserId === authUserId
+    });
+
+    if (!isAdmin && orderUserId !== authUserId) {
+      return res.status(403).json(
+        ErrorResponse.forbidden(
+          'You are not authorized to cancel this order',
+          {
+            orderId: id,
+            reason: 'Order belongs to another user',
+            orderUserId,
+            requestingUserId: authUserId
+          }
+        )
+      );
+    }
+
+    const currentStatus = order.status;
+
+    // Check if order can be cancelled
+    if (currentStatus === ORDER_STATUS.DELIVERED) {
+      return res.status(422).json(
+        ErrorResponse.unprocessableEntity(
+          'Cannot cancel delivered order',
+          {
+            orderId: id,
+            currentStatus,
+            currentStatusLabel: getStatusLabel(currentStatus),
+            reason: 'Delivered orders cannot be cancelled. Please contact support for returns.'
+          }
+        )
+      );
+    }
+
+    if (currentStatus === ORDER_STATUS.CANCELLED) {
+      return res.status(422).json(
+        ErrorResponse.unprocessableEntity(
+          'Order is already cancelled',
+          {
+            orderId: id,
+            currentStatus,
+            currentStatusLabel: getStatusLabel(currentStatus)
+          }
+        )
+      );
+    }
+
+    // Validate transition is allowed
+    if (!isValidTransition(currentStatus, ORDER_STATUS.CANCELLED)) {
+      return res.status(422).json(
+        ErrorResponse.unprocessableEntity(
+          'Cannot cancel order in current status',
+          {
+            currentStatus,
+            currentStatusLabel: getStatusLabel(currentStatus),
+            reason: 'This order cannot be cancelled at this stage'
+          }
+        )
+      );
+    }
+
+    // Update order status to CANCELLED
+    const updatedOrder = await Order.findByIdAndUpdate(
+      id,
+      { status: ORDER_STATUS.CANCELLED, cancelledAt: new Date() },
+      { new: true, runValidators: true }
+    );
+
+    // Prepare event data
+    const statusChangeData = {
+      order: updatedOrder,
+      oldStatus: currentStatus,
+      newStatus: ORDER_STATUS.CANCELLED,
+      oldStatusLabel: getStatusLabel(currentStatus),
+      newStatusLabel: getStatusLabel(ORDER_STATUS.CANCELLED)
+    };
+
+    // Emit status changed event for real-time notifications (WebSocket)
+    orderEvents.emit(ORDER_EVENTS.STATUS_CHANGED, statusChangeData);
+
+    // Emit cancellation event
+    orderEvents.emit(ORDER_EVENTS.CANCELLED, updatedOrder);
+
+    // Publish to Kafka for inter-service communication (async, non-blocking)
+    setImmediate(() => {
+      publishOrderStatusChanged(statusChangeData).catch(err => {
+        console.error('Failed to publish status change to Kafka:', err.message);
+      });
+
+      publishOrderCancelled(updatedOrder).catch(err => {
+        console.error('Failed to publish order cancelled to Kafka:', err.message);
+      });
+    });
+
+    // Return success response
+    res.status(200).json(
+      ErrorResponse.success(
+        {
+          order: updatedOrder,
+          oldStatus: currentStatus,
+          oldStatusLabel: getStatusLabel(currentStatus),
+          newStatus: ORDER_STATUS.CANCELLED,
+          newStatusLabel: getStatusLabel(ORDER_STATUS.CANCELLED)
+        },
+        'Order cancelled successfully'
+      )
+    );
+
+  } catch (error) {
+    // Log error for debugging
+    console.error('Cancel order error:', error);
+
+    // Handle MongoDB CastError (invalid ObjectID format)
+    if (error.name === 'CastError') {
+      return res.status(400).json(
+        ErrorResponse.validation(
+          'Invalid order ID format',
+          { id: 'Order ID must be a valid MongoDB ObjectID' }
+        )
+      );
+    }
+
+    // Generic server error
+    res.status(500).json(
+      ErrorResponse.serverError(
+        'Failed to cancel order',
+        'Please verify the order ID and try again'
+      )
+    );
+  }
+};
