@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { login } from '@/store/slices/authSlice';
+import { login, clearError } from '@/store/slices/authSlice';
 import { FiMail, FiLock, FiEye, FiEyeOff, FiShoppingBag, FiAlertCircle } from 'react-icons/fi';
 
 function LoginForm() {
@@ -19,10 +19,19 @@ function LoginForm() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [sessionExpired, setSessionExpired] = useState(false);
+  const [redirectPath, setRedirectPath] = useState<string | null>(null);
 
-  // Check for session expiry or redirect params
-  const sessionExpired = searchParams.get('session') === 'expired';
-  const redirectPath = searchParams.get('redirect');
+  // Clear any existing errors when component mounts
+  useEffect(() => {
+    dispatch(clearError());
+  }, [dispatch]);
+
+  // Read search params only on client side to avoid hydration issues
+  useEffect(() => {
+    setSessionExpired(searchParams.get('session') === 'expired');
+    setRedirectPath(searchParams.get('redirect'));
+  }, [searchParams]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -73,6 +82,7 @@ function LoginForm() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+
     // Clear validation error for this field
     if (validationErrors[name]) {
       setValidationErrors((prev) => {
@@ -80,6 +90,11 @@ function LoginForm() {
         delete newErrors[name];
         return newErrors;
       });
+    }
+
+    // Clear global error when user starts typing
+    if (error) {
+      dispatch(clearError());
     }
   };
 
@@ -92,7 +107,7 @@ function LoginForm() {
           </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Welcome back
+          Welcome to E-Shop
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           Sign in to your account to continue shopping
@@ -140,7 +155,12 @@ function LoginForm() {
                     </svg>
                   </div>
                   <div className="ml-3">
-                    <p className="text-sm font-medium text-red-800">{error}</p>
+                    <h3 className="text-sm font-medium text-red-800">Login Failed</h3>
+                    <p className="mt-1 text-sm text-red-700">
+                      {error === 'Login failed' || error === 'Invalid credentials'
+                        ? 'Invalid email or password. Please check your credentials and try again.'
+                        : error}
+                    </p>
                   </div>
                 </div>
               </div>

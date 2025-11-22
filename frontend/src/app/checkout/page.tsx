@@ -226,8 +226,17 @@ export default function CheckoutPage() {
                         value={formData.zipCode}
                         onChange={handleInputChange}
                         required
+                        pattern="[0-9]*"
+                        inputMode="numeric"
+                        maxLength={10}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                         placeholder="10001"
+                        onKeyPress={(e) => {
+                          // Allow only numbers
+                          if (!/[0-9]/.test(e.key)) {
+                            e.preventDefault();
+                          }
+                        }}
                       />
                     </div>
 

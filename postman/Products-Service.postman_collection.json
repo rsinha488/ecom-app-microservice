@@ -1,0 +1,345 @@
+{
+	"info": {
+		"_postman_id": "products-service-collection",
+		"name": "E-commerce Products Service",
+		"description": "Complete collection for Products Service - Product catalog and inventory management",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{access_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3001",
+			"type": "string"
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "product_id",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Public Endpoints",
+			"item": [
+				{
+					"name": "1. Get All Products",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has products array', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.data).to.have.property('products');",
+									"    pm.expect(response.data.products).to.be.an('array');",
+									"});",
+									"",
+									"// Save first product ID for later use",
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.data.products && response.data.products.length > 0) {",
+									"        pm.collectionVariables.set('product_id', response.data.products[0]._id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products?page=1&limit=20",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number"
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "Items per page"
+								},
+								{
+									"key": "category",
+									"value": "electronics",
+									"description": "Filter by category slug",
+									"disabled": true
+								},
+								{
+									"key": "minPrice",
+									"value": "100",
+									"description": "Minimum price",
+									"disabled": true
+								},
+								{
+									"key": "maxPrice",
+									"value": "500",
+									"description": "Maximum price",
+									"disabled": true
+								},
+								{
+									"key": "inStock",
+									"value": "true",
+									"description": "Only in-stock products",
+									"disabled": true
+								},
+								{
+									"key": "sort",
+									"value": "price",
+									"description": "Sort by: price, -price, name, -name, createdAt, -createdAt",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get all products with pagination and optional filters"
+					},
+					"response": []
+				},
+				{
+					"name": "2. Search Products",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/search?q=laptop",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products", "search"],
+							"query": [
+								{
+									"key": "q",
+									"value": "laptop",
+									"description": "Search query"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"disabled": true
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Search products by name or description"
+					},
+					"response": []
+				},
+				{
+					"name": "3. Get Product by ID",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/{{product_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products", "{{product_id}}"]
+						},
+						"description": "Get a single product by ID"
+					},
+					"response": []
+				}
+			],
+			"description": "Public endpoints that don't require authentication"
+		},
+		{
+			"name": "Admin Endpoints",
+			"item": [
+				{
+					"name": "4. Create Product (Admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.product) {",
+									"        pm.collectionVariables.set('product_id', response.data.product._id);",
+									"        console.log('New product ID saved:', response.data.product._id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Premium Wireless Headphones\",\n  \"description\": \"High-quality wireless headphones with noise cancellation\",\n  \"price\": 199.99,\n  \"category\": \"electronics\",\n  \"brand\": \"TechBrand\",\n  \"stock\": 50,\n  \"imageUrl\": \"https://example.com/images/headphones.jpg\",\n  \"rating\": 4.5,\n  \"reviewCount\": 128\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/products",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products"]
+						},
+						"description": "Create a new product (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "5. Update Product (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Premium Wireless Headphones - Updated\",\n  \"price\": 179.99,\n  \"stock\": 75\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/{{product_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products", "{{product_id}}"]
+						},
+						"description": "Update a product (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "6. Delete Product (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/{{product_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products", "{{product_id}}"]
+						},
+						"description": "Delete a product (Admin only)"
+					},
+					"response": []
+				}
+			],
+			"description": "Admin-only endpoints (requires admin role)"
+		},
+		{
+			"name": "Stock Management",
+			"item": [
+				{
+					"name": "7. Reserve Stock",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"quantity\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/{{product_id}}/reserve",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products", "{{product_id}}", "reserve"]
+						},
+						"description": "Reserve stock for a product (inter-service communication)"
+					},
+					"response": []
+				},
+				{
+					"name": "8. Release Stock",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"quantity\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/{{product_id}}/release",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products", "{{product_id}}", "release"]
+						},
+						"description": "Release reserved stock (inter-service communication)"
+					},
+					"response": []
+				}
+			],
+			"description": "Stock management endpoints for inter-service communication"
+		}
+	]
+}

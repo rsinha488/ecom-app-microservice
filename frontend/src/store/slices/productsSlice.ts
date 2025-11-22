@@ -84,7 +84,8 @@ export const loadMoreProducts = createAsyncThunk(
       return {
         products: response.data.data.products,
         count: response.data.data.count,
-        meta: response.data.meta
+        meta: response.data.meta,
+        requestedPage: params.page // Include the requested page to ensure state updates
       };
     } catch (error: any) {
       const message = error.message || 'Failed to load more products';
@@ -213,14 +214,18 @@ const productsSlice = createSlice({
         // Append new products to existing items
         state.items = [...state.items, ...action.payload.products];
         state.pagination.total = action.payload.count;
-        // Update pagination if meta is provided
+        // Update pagination - use requestedPage as fallback
         if (action.payload.meta) {
           state.pagination = {
-            page: action.payload.meta.page || state.pagination.page,
+            page: action.payload.meta.page || action.payload.requestedPage,
             limit: action.payload.meta.limit || state.pagination.limit,
             total: action.payload.meta.total || action.payload.count,
             pages: action.payload.meta.pages || Math.ceil(action.payload.count / state.pagination.limit)
           };
+        } else {
+          // If no meta, manually update the page number
+          state.pagination.page = action.payload.requestedPage;
+          state.pagination.pages = Math.ceil(action.payload.count / state.pagination.limit);
         }
       })
       .addCase(loadMoreProducts.rejected, (state, action) => {

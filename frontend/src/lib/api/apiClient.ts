@@ -157,7 +157,7 @@ export function createEnhancedAPIClient(config: APIClientConfig): AxiosInstance 
             const currentPath = window.location.pathname;
             // Don't redirect to login from login/register pages
             if (currentPath !== '/auth/login' && currentPath !== '/auth/register') {
-              window.location.href = `/auth/login?session=expired&redirect=${encodeURIComponent(currentPath)}`;
+              window.location.href = `/auth/login`;
             } else {
               window.location.href = `/auth/login?session=expired`;
             }

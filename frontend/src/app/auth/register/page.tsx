@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { register } from '@/store/slices/authSlice';
+import { register, clearError } from '@/store/slices/authSlice';
 import { FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiShoppingBag, FiCheckCircle } from 'react-icons/fi';
 
 export default function RegisterPage() {
@@ -22,6 +22,11 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+
+  // Clear any existing errors when component mounts
+  useEffect(() => {
+    dispatch(clearError());
+  }, [dispatch]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -46,10 +51,8 @@ export default function RegisterPage() {
 
     if (!formData.password) {
       errors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      errors.password = 'Password must be at least 8 characters';
-    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      errors.password = 'Password must contain uppercase, lowercase, and number';
+    } else if (formData.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
     }
 
     if (!formData.confirmPassword) {
@@ -89,12 +92,19 @@ export default function RegisterPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Clear validation error for this field
     if (validationErrors[name]) {
       setValidationErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[name];
         return newErrors;
       });
+    }
+
+    // Clear global error when user starts typing
+    if (error) {
+      dispatch(clearError());
     }
   };
 
@@ -154,7 +164,14 @@ export default function RegisterPage() {
                     </svg>
                   </div>
                   <div className="ml-3">
-                    <p className="text-sm font-medium text-red-800">{error}</p>
+                    <h3 className="text-sm font-medium text-red-800">Registration Failed</h3>
+                    <p className="mt-1 text-sm text-red-700">
+                      {error === 'Email already exists. Please use a different email or login.'
+                        ? error
+                        : error === 'Registration failed'
+                        ? 'Unable to create account. Please check your information and try again.'
+                        : error}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -254,7 +271,7 @@ export default function RegisterPage() {
                 <p className="mt-1 text-sm text-red-600">{validationErrors.password}</p>
               )}
               <p className="mt-1 text-xs text-gray-500">
-                Must be 8+ characters with uppercase, lowercase, and number
+                Must be at least 6 characters long
               </p>
             </div>
 

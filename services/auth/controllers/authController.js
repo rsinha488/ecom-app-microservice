@@ -14,7 +14,11 @@ exports.register = async (req, res) => {
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
+      return res.status(400).json({
+        success: false,
+        error: 'DuplicateEmail',
+        message: 'Email already exists. Please use a different email or login.'
+      });
     }
 
     const user = new User({
@@ -29,15 +33,31 @@ exports.register = async (req, res) => {
     await user.save();
 
     res.status(201).json({
+      success: true,
       message: 'User registered successfully',
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name
+      data: {
+        user: {
+          id: user._id,
+          email: user.email,
+          name: user.name
+        }
       }
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    // Handle MongoDB duplicate key error
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        error: 'DuplicateEmail',
+        message: 'Email already exists. Please use a different email or login.'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: error.message
+    });
   }
 };
 

@@ -96,10 +96,17 @@ export const checkAuth = createAsyncThunk(
         return rejectWithValue('Not authenticated');
       }
 
-      // Verify with server
-      const response = await fetch('/api/auth/me');
+      // Verify with server (suppress 401 errors in console as they're expected)
+      const response = await fetch('/api/auth/me', {
+        // Don't log 401 errors to console - they're expected when not logged in
+        credentials: 'same-origin',
+      });
 
       if (!response.ok) {
+        // Silently fail for 401 - user just isn't logged in
+        if (response.status === 401) {
+          return rejectWithValue('Not authenticated');
+        }
         return rejectWithValue('Session expired');
       }
 
@@ -107,7 +114,8 @@ export const checkAuth = createAsyncThunk(
       // New standardized format: data.data?.user or data.user (backward compatible)
       return data.data?.user || data.user;
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Authentication check failed');
+      // Don't log network errors for auth checks
+      return rejectWithValue('Authentication check failed');
     }
   }
 );
@@ -169,6 +177,9 @@ const authSlice = createSlice({
     },
     setInitialized: (state) => {
       state.initialized = true;
+    },
+    clearError: (state) => {
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
@@ -258,5 +269,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { setUser, clearAuth, updateUser, setInitialized } = authSlice.actions;
+export const { setUser, clearAuth, updateUser, setInitialized, clearError } = authSlice.actions;
 export default authSlice.reducer;

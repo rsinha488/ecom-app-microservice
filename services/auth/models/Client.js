@@ -41,7 +41,7 @@ const clientSchema = new mongoose.Schema({
 });
 
 // Single field indexes
-clientSchema.index({ client_id: 1 }, { unique: true });
+// Note: client_id index is created automatically by unique: true in schema
 clientSchema.index({ isActive: 1 });
 
 // Compound indexes

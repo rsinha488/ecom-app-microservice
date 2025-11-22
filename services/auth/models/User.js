@@ -91,7 +91,7 @@ userSchema.methods.getOIDCUserInfo = function() {
 };
 
 // Single field indexes
-userSchema.index({ email: 1 }, { unique: true });
+// Note: email index is created automatically by unique: true in schema
 userSchema.index({ isActive: 1 });
 userSchema.index({ createdAt: -1 });
 
