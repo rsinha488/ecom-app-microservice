@@ -4,16 +4,16 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAppDispatch } from '@/store';
-import { addToCart } from '@/store/slices/cartSlice';
+import { addToCart, updateQuantity } from '@/store/slices/cartSlice';
 import { Product } from '@/types';
 import {
   FiShoppingCart,
-  FiHeart,
   FiStar,
   FiTruck,
   FiShield,
   FiRefreshCw,
   FiArrowLeft,
+  FiHeart,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 
@@ -27,10 +27,10 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [selectedImage, setSelectedImage] = useState(0);
 
   useEffect(() => {
     fetchProduct();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId]);
 
   const fetchProduct = async () => {
@@ -54,18 +54,15 @@ export default function ProductDetailPage() {
   const handleAddToCart = () => {
     if (!product) return;
 
-    dispatch(
-      addToCart({
-        _id: product._id,
-        name: product.name,
-        price: product.price,
-        imageUrl: product.imageUrl || '',
-        quantity,
-        stock: product.stock,
-      })
-    );
+    // Add product to cart first (or find existing)
+    dispatch(addToCart(product));
 
-    toast.success(`${product.name} added to cart!`);
+    // Update to the desired quantity
+    if (quantity > 1) {
+      dispatch(updateQuantity({ productId: product._id, quantity }));
+    }
+
+    toast.success(`${quantity} x ${product.name} added to cart!`);
   };
 
   const handleQuantityChange = (newQuantity: number) => {
@@ -129,11 +126,12 @@ export default function ProductDetailPage() {
             {/* Product Images */}
             <div className="space-y-4">
               {/* Main Image */}
-              <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
+              <div className="relative w-full aspect-square bg-gray-100 rounded-lg overflow-hidden min-h-[400px] lg:min-h-[500px]">
                 <Image
                   src={product.imageUrl || '/placeholder.png'}
                   alt={product.name}
                   fill
+                  sizes="(max-width: 1024px) 100vw, 50vw"
                   className="object-cover"
                   priority
                 />
@@ -248,11 +246,11 @@ export default function ProductDetailPage() {
                       -
                     </button>
                     <input
-                      type="number"
-                      min="1"
-                      max={product.stock}
+                      type="text"
+                      
                       value={quantity}
-                      onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
+                      disabled
+                      // onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
                       className="w-20 h-10 text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                     <button
@@ -278,9 +276,6 @@ export default function ProductDetailPage() {
                 >
                   <FiShoppingCart className="h-5 w-5" />
                   <span>{inStock ? 'Add to Cart' : 'Out of Stock'}</span>
-                </button>
-                <button className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
-                  <FiHeart className="h-5 w-5" />
                 </button>
               </div>
 

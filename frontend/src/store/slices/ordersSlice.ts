@@ -68,7 +68,7 @@ const ordersSlice = createSlice({
       })
       .addCase(fetchUserOrders.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload;
+        state.items = action.payload.data.orders;
       })
       .addCase(fetchUserOrders.rejected, (state, action) => {
         state.loading = false;
@@ -79,7 +79,7 @@ const ordersSlice = createSlice({
       })
       .addCase(fetchOrderById.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentOrder = action.payload;
+        state.currentOrder = action.payload.data.order;
       })
       .addCase(fetchOrderById.rejected, (state, action) => {
         state.loading = false;
@@ -90,8 +90,8 @@ const ordersSlice = createSlice({
       })
       .addCase(createOrder.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentOrder = action.payload;
-        state.items.unshift(action.payload);
+        state.currentOrder = action.payload.data.order;
+        state.items.unshift(action.payload.data.order);
       })
       .addCase(createOrder.rejected, (state, action) => {
         state.loading = false;

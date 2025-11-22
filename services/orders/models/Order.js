@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 const { ORDER_STATUS } = require('../constants/orderStatus');
+const { PAYMENT_STATUS_CODE } = require('../constants/paymentStatus');
+const { PAYMENT_METHOD_CODE } = require('../constants/paymentMethod');
 
 const orderItemSchema = new mongoose.Schema({
   productId: {
@@ -58,13 +60,27 @@ const orderSchema = new mongoose.Schema({
     country: String
   },
   paymentStatus: {
-    type: String,
-    enum: ['pending', 'paid', 'failed', 'refunded'],
-    default: 'pending'
+    type: Number,
+    enum: [
+      PAYMENT_STATUS_CODE.PENDING,   // 1
+      PAYMENT_STATUS_CODE.PAID,      // 2
+      PAYMENT_STATUS_CODE.FAILED,    // 3
+      PAYMENT_STATUS_CODE.REFUNDED   // 4
+    ],
+    default: PAYMENT_STATUS_CODE.PENDING,
+    required: true
   },
   paymentMethod: {
-    type: String,
-    enum: ['credit_card', 'debit_card', 'paypal', 'cash_on_delivery'],
+    type: Number,
+    enum: [
+      PAYMENT_METHOD_CODE.CREDIT_CARD,       // 1
+      PAYMENT_METHOD_CODE.DEBIT_CARD,        // 2
+      PAYMENT_METHOD_CODE.PAYPAL,            // 3
+      PAYMENT_METHOD_CODE.CASH_ON_DELIVERY,  // 4
+      PAYMENT_METHOD_CODE.BANK_TRANSFER,     // 5
+      PAYMENT_METHOD_CODE.UPI,               // 6
+      PAYMENT_METHOD_CODE.WALLET             // 7
+    ],
     required: true
   },
   trackingNumber: {

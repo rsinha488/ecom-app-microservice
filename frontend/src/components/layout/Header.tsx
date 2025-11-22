@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { logout, clearAuth } from '@/store/slices/authSlice';
 import { clearCart } from '@/store/slices/cartSlice';
@@ -24,6 +24,7 @@ export default function Header() {
   const { items } = useAppSelector((state) => state.cart);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   const cartItemsCount = items.reduce((total, item) => total + item.quantity, 0);
 
@@ -41,14 +42,24 @@ export default function Header() {
       router.push('/auth/login');
     }
   };
-
+  /**
+   * Check if a navigation link is active
+   */
+  const isActiveLink = (href: string) => {
+    if (href === '/') {
+      return pathname === '/';
+    }
+    return pathname.startsWith(href);
+  };
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/products" className="flex items-center space-x-2 group">
+            <Link href="/products" className={`flex items-center space-x-2 group ${isActiveLink('/')
+              ? 'text-primary-600'
+              : 'text-gray-700 hover:text-primary-600'}`}>
               <div className="bg-indigo-600 p-2 rounded-lg group-hover:bg-indigo-700 transition">
                 <FiShoppingBag className="h-6 w-6 text-white" />
               </div>
@@ -62,13 +73,21 @@ export default function Header() {
           <div className="hidden md:flex items-center space-x-8">
             <Link
               href="/products"
-              className="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium transition"
+              className={`px-3 py-2 text-sm font-medium transition rounded-lg
+              ${isActiveLink('/products')
+                  ? 'text-indigo-600 bg-indigo-50 font-semibold'
+                  : 'text-gray-700 hover:text-indigo-600 hover:bg-gray-50'}
+            `}
             >
               Products
             </Link>
             <Link
               href="/orders"
-              className="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium transition"
+              className={`px-3 py-2 text-sm font-medium transition rounded-lg
+              ${isActiveLink('/orders')
+                  ? 'text-indigo-600 bg-indigo-50 font-semibold'
+                  : 'text-gray-700 hover:text-indigo-600 hover:bg-gray-50'}
+            `}
             >
               Orders
             </Link>
@@ -79,7 +98,10 @@ export default function Header() {
             {/* Cart */}
             <Link
               href="/cart"
-              className="relative p-2 text-gray-700 hover:text-indigo-600 transition"
+              className={`relative p-2 transition rounded-lg
+                ${isActiveLink('/cart')
+                  ? 'text-indigo-600 bg-indigo-50'
+                  : 'text-gray-700 hover:text-indigo-600 hover:bg-gray-50'}`}
             >
               <FiShoppingCart className="h-6 w-6" />
               {cartItemsCount > 0 && (
@@ -127,7 +149,10 @@ export default function Header() {
                       </Link> */}
                       <Link
                         href="/orders"
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        className={`flex items-center px-4 py-2 text-sm
+                        ${isActiveLink('/orders')
+                            ? 'text-indigo-600 bg-indigo-50 font-medium'
+                            : 'text-gray-700 hover:bg-gray-100'}`}
                         onClick={() => setUserMenuOpen(false)}
                       >
                         <FiPackage className="mr-3 h-4 w-4" />
@@ -135,7 +160,7 @@ export default function Header() {
                       </Link>
                       <button
                         onClick={handleLogout}
-                        className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                        className={`flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50`}
                       >
                         <FiLogOut className="mr-3 h-4 w-4" />
                         Logout
@@ -172,14 +197,20 @@ export default function Header() {
           <div className="md:hidden border-t border-gray-200 py-4 space-y-2">
             <Link
               href="/products"
-              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+              className={`block px-4 py-2 rounded-lg text-sm font-medium
+                ${isActiveLink('/products')
+                  ? 'text-indigo-600 bg-indigo-50'
+                  : 'text-gray-700 hover:bg-gray-100'}`}
               onClick={() => setMobileMenuOpen(false)}
             >
               Products
             </Link>
             <Link
               href="/orders"
-              className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+              className={`block px-4 py-2 rounded-lg text-sm font-medium
+                ${isActiveLink('/orders')
+                  ? 'text-indigo-600 bg-indigo-50'
+                  : 'text-gray-700 hover:bg-gray-100'}`}
               onClick={() => setMobileMenuOpen(false)}
             >
               Orders

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Product } from '@/types';
 import { useAppDispatch } from '@/store';
 import { addToCart } from '@/store/slices/cartSlice';
@@ -29,13 +30,16 @@ export default function ProductCard({ product }: ProductCardProps) {
   return (
     <Link href={`/products/${product._id}`}>
       <div className="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 h-full flex flex-col">
-        {/* Image Container */}
-        <div className="relative aspect-square overflow-hidden bg-gray-100">
+        {/* Image Container - Fixed height for uniform display */}
+        <div className="relative w-full h-64 overflow-hidden bg-gray-100">
           {product.imageUrl ? (
-            <img
+            <Image
               src={product.imageUrl}
               alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+              className="object-cover group-hover:scale-110 transition-transform duration-300"
+              priority={false}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100">

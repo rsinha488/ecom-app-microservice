@@ -50,6 +50,8 @@ export interface Product {
   rating: number;
   reviewCount: number;
   isActive: boolean;
+  compareAtPrice?: number;
+  specifications?: Record<string, any>;
   createdAt: string;
   updatedAt: string;
 }
@@ -93,8 +95,8 @@ export interface Order {
   totalAmount: number;
   status: number; // Numeric status code (1-5): 1=Pending, 2=Processing, 3=Shipped, 4=Delivered, 5=Cancelled
   shippingAddress: ShippingAddress;
-  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
-  paymentMethod: 'credit_card' | 'debit_card' | 'paypal' | 'cash_on_delivery';
+  paymentStatus: number; // Numeric status code (1-4): 1=Pending, 2=Paid, 3=Failed, 4=Refunded
+  paymentMethod: number; // Numeric method code (1-7): 1=Credit Card, 2=Debit Card, 3=PayPal, 4=COD, 5=Bank Transfer, 6=UPI, 7=Wallet
   trackingNumber?: string;
   shippedAt?: string;
   deliveredAt?: string;

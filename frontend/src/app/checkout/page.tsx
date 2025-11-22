@@ -2,11 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { clearCart } from '@/store/slices/cartSlice';
 import { FiCreditCard, FiMapPin, FiShoppingBag, FiCheck } from 'react-icons/fi';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
+import { PaymentMethodCode } from '@/constants/paymentMethod';
+import { PaymentStatusCode } from '@/constants/paymentStatus';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -22,8 +25,8 @@ export default function CheckoutPage() {
     state: '',
     zipCode: '',
     country: '',
-    // Payment
-    paymentMethod: 'cash_on_delivery',
+    // Payment (now using numeric codes)
+    paymentMethod: PaymentMethodCode.CASH_ON_DELIVERY, // 4
     // Optional fields
     notes: '',
   });
@@ -35,7 +38,9 @@ export default function CheckoutPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    // Parse payment method as number
+    const parsedValue = name === 'paymentMethod' ? parseInt(value, 10) : value;
+    setFormData((prev) => ({ ...prev, [name]: parsedValue }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -79,7 +84,7 @@ export default function CheckoutPage() {
           country: formData.country,
         },
         paymentMethod: formData.paymentMethod,
-        paymentStatus: 'paid', // In production, this would be set after payment gateway confirms
+        paymentStatus: PaymentStatusCode.PENDING, // 2 - In production, this would be set after payment gateway confirms
       };
 
       console.log('Creating order:', orderData);
@@ -105,7 +110,7 @@ export default function CheckoutPage() {
       dispatch(clearCart());
 
       // Show success message
-      toast.success(`🎉 Order #${data.orderNumber} placed successfully! Check your orders page for real-time updates.`, {
+      toast.success(`🎉 Order #${data.data.order.orderNumber} placed successfully! Check your orders page for real-time updates.`, {
         autoClose: 5000,
       });
 
@@ -257,8 +262,8 @@ export default function CheckoutPage() {
                     <input
                       type="radio"
                       name="paymentMethod"
-                      value="credit_card"
-                      checked={formData.paymentMethod === 'credit_card'}
+                      value={PaymentMethodCode.CREDIT_CARD}
+                      checked={formData.paymentMethod === PaymentMethodCode.CREDIT_CARD}
                       onChange={handleInputChange}
                       className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
                       disabled
@@ -270,8 +275,8 @@ export default function CheckoutPage() {
                     <input
                       type="radio"
                       name="paymentMethod"
-                      value="debit_card"
-                      checked={formData.paymentMethod === 'debit_card'}
+                      value={PaymentMethodCode.DEBIT_CARD}
+                      checked={formData.paymentMethod === PaymentMethodCode.DEBIT_CARD}
                       onChange={handleInputChange}
                       className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
                       disabled
@@ -283,8 +288,8 @@ export default function CheckoutPage() {
                     <input
                       type="radio"
                       name="paymentMethod"
-                      value="paypal"
-                      checked={formData.paymentMethod === 'paypal'}
+                      value={PaymentMethodCode.PAYPAL}
+                      checked={formData.paymentMethod === PaymentMethodCode.PAYPAL}
                       onChange={handleInputChange}
                       className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
                       disabled
@@ -296,8 +301,8 @@ export default function CheckoutPage() {
                     <input
                       type="radio"
                       name="paymentMethod"
-                      value="cash_on_delivery"
-                      checked={formData.paymentMethod === 'cash_on_delivery'}
+                      value={PaymentMethodCode.CASH_ON_DELIVERY}
+                      checked={formData.paymentMethod === PaymentMethodCode.CASH_ON_DELIVERY}
                       onChange={handleInputChange}
                       className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
                     />
@@ -356,9 +361,15 @@ export default function CheckoutPage() {
               <div className="space-y-3 mb-6 max-h-64 overflow-y-auto">
                 {items.map((item) => (
                   <div key={item._id} className="flex items-center space-x-3 pb-3 border-b border-gray-100">
-                    <div className="flex-shrink-0 w-16 h-16 bg-gray-200 rounded-lg overflow-hidden">
+                    <div className="flex-shrink-0 w-16 h-16 bg-gray-200 rounded-lg overflow-hidden relative">
                       {item.imageUrl ? (
-                        <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                        <Image
+                          src={item.imageUrl}
+                          alt={item.name}
+                          fill
+                          sizes="64px"
+                          className="object-cover"
+                        />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <FiShoppingBag className="h-8 w-8 text-gray-400" />

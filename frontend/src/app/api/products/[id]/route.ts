@@ -23,7 +23,9 @@ export async function GET(
     }
 
     const data = await response.json();
-    return NextResponse.json({ product: data });
+    // Extract product from standardized API response format
+    const product = data.data?.product || data.product || data;
+    return NextResponse.json({ product });
   } catch (error: any) {
     console.error('Fetch product error:', error);
     return NextResponse.json(

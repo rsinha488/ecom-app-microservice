@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { login } from '@/store/slices/authSlice';
-import { FiMail, FiLock, FiEye, FiEyeOff, FiShoppingBag } from 'react-icons/fi';
+import { FiMail, FiLock, FiEye, FiEyeOff, FiShoppingBag, FiAlertCircle } from 'react-icons/fi';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
   const { loading, error, isAuthenticated } = useAppSelector((state) => state.auth);
 
@@ -19,11 +20,16 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
+  // Check for session expiry or redirect params
+  const sessionExpired = searchParams.get('session') === 'expired';
+  const redirectPath = searchParams.get('redirect');
+
   useEffect(() => {
     if (isAuthenticated) {
-      router.push('/products');
+      // Redirect to original path or products page
+      router.push(redirectPath || '/products');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, redirectPath]);
 
   const validate = () => {
     const errors: Record<string, string> = {};
@@ -92,6 +98,25 @@ export default function LoginPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-gray-100">
+          {/* Session Expired Message */}
+          {sessionExpired && (
+            <div className="mb-6 rounded-lg bg-yellow-50 border border-yellow-200 p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <FiAlertCircle className="h-5 w-5 text-yellow-400" />
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-yellow-800">
+                    Session Expired
+                  </h3>
+                  <div className="mt-2 text-sm text-yellow-700">
+                    <p>Your session has expired. Please log in again to continue.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <form className="space-y-6" onSubmit={handleSubmit}>
             {/* Global Error */}
             {error && (
@@ -281,5 +306,22 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

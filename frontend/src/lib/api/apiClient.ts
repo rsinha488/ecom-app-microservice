@@ -146,9 +146,18 @@ export function createEnhancedAPIClient(config: APIClientConfig): AxiosInstance 
           // Refresh failed - clear tokens and redirect to login
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
+
+          // Clear user cookie to trigger middleware redirect
           if (typeof window !== 'undefined') {
-            window.location.href = '/login?session=expired';
+            document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+            document.cookie = 'user=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+
+            // Graceful redirect with session expired message
+            const currentPath = window.location.pathname;
+            window.location.href = `/auth/login?session=expired`;
+            // window.location.href = `/auth/login?session=expired&redirect=${encodeURIComponent(currentPath)}`;
           }
+
           return Promise.reject(transformError(refreshError as AxiosError));
         }
       }
@@ -170,11 +179,11 @@ export function createEnhancedAPIClient(config: APIClientConfig): AxiosInstance 
       // Transform and handle the error
       const transformedError = transformError(error);
 
-      // Show error toast if configured
-      if (showToastOnError) {
+      // Show error toast if configured (but not for 401 during refresh, as we're redirecting)
+      if (showToastOnError && !(error.response?.status === 401 && originalRequest._retry)) {
         handleAPIError(transformedError, {
           showSuggestion: true,
-          redirectOnAuthError: error.response?.status === 401
+          redirectOnAuthError: false // We handle redirect ourselves above
         });
       }
 

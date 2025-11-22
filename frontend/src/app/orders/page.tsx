@@ -19,6 +19,8 @@ import {
 import { useOrderSocket } from '@/hooks/useOrderSocket';
 import { getAccessToken } from '@/lib/cookies';
 import OrderStatusBadge from '@/components/orders/OrderStatusBadge';
+import { getPaymentMethodDisplay } from '@/constants/paymentMethod';
+import { getPaymentStatusDisplay, getPaymentStatusColor, PaymentStatusCode } from '@/constants/paymentStatus';
 
 // Status filter options
 const STATUS_FILTERS = [
@@ -82,32 +84,33 @@ export default function OrdersPage() {
 
   // Filter and sort orders
   const filteredAndSortedOrders = useMemo(() => {
-    let filtered = orders;
+    let filtered = orders.filter(order => order != null); // Remove null/undefined orders
 
     // Filter by status
     if (selectedStatus !== 'all') {
-      filtered = filtered.filter(order => order.status.toString() === selectedStatus);
+      const statusNumber = parseInt(selectedStatus, 10);
+      filtered = filtered.filter(order => order?.status === statusNumber);
     }
 
     // Filter by search query (order number or product name)
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(order =>
-        order.orderNumber.toLowerCase().includes(query) ||
-        order.items.some(item => item.productName.toLowerCase().includes(query))
+        order?.orderNumber?.toLowerCase().includes(query) ||
+        order?.items?.some(item => item?.productName?.toLowerCase().includes(query))
       );
     }
 
     // Sort orders
     const sorted = [...filtered].sort((a, b) => {
       if (sortBy === 'date') {
-        const dateA = new Date(a.createdAt).getTime();
-        const dateB = new Date(b.createdAt).getTime();
+        const dateA = new Date(a?.createdAt || 0).getTime();
+        const dateB = new Date(b?.createdAt || 0).getTime();
         return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
       } else {
         return sortOrder === 'desc'
-          ? b.totalAmount - a.totalAmount
-          : a.totalAmount - b.totalAmount;
+          ? (b?.totalAmount || 0) - (a?.totalAmount || 0)
+          : (a?.totalAmount || 0) - (b?.totalAmount || 0);
       }
     });
 
@@ -116,14 +119,15 @@ export default function OrdersPage() {
 
   // Stats calculation
   const stats = useMemo(() => {
+    const validOrders = orders.filter(o => o != null);
     return {
-      total: orders.length,
-      pending: orders.filter(o => o.status === 1).length,
-      processing: orders.filter(o => o.status === 2).length,
-      shipped: orders.filter(o => o.status === 3).length,
-      delivered: orders.filter(o => o.status === 4).length,
-      cancelled: orders.filter(o => o.status === 5).length,
-      totalSpent: orders.reduce((sum, order) => sum + order.totalAmount, 0),
+      total: validOrders.length,
+      pending: validOrders.filter(o => o?.status === 1).length,
+      processing: validOrders.filter(o => o?.status === 2).length,
+      shipped: validOrders.filter(o => o?.status === 3).length,
+      delivered: validOrders.filter(o => o?.status === 4).length,
+      cancelled: validOrders.filter(o => o?.status === 5).length,
+      totalSpent: validOrders.reduce((sum, order) => sum + (order?.totalAmount || 0), 0),
     };
   }, [orders]);
 
@@ -221,7 +225,7 @@ export default function OrdersPage() {
             </div>
 
             {/* WebSocket Connection Status */}
-            <div className="flex items-center space-x-3 bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-200">
+            {/* <div className="flex items-center space-x-3 bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-200">
               {isConnected ? (
                 <>
                   <div className="relative">
@@ -239,11 +243,11 @@ export default function OrdersPage() {
                   <span className="text-sm text-gray-500">Connecting...</span>
                 </>
               )}
-            </div>
+            </div> */}
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+          {/* <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
             <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
               <p className="text-xs text-gray-600 font-medium mb-1">Total Orders</p>
               <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
@@ -268,7 +272,7 @@ export default function OrdersPage() {
               <p className="text-xs text-indigo-800 font-medium mb-1">Total Spent</p>
               <p className="text-2xl font-bold text-indigo-900">${stats.totalSpent.toFixed(0)}</p>
             </div>
-          </div>
+          </div> */}
 
           {/* Filters and Search */}
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
@@ -437,14 +441,14 @@ export default function OrdersPage() {
                       <div className="text-sm text-gray-700 space-y-2">
                         <p>
                           <span className="font-medium">Method:</span>{' '}
-                          {order.paymentMethod.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                          {getPaymentMethodDisplay(order.paymentMethod)}
                         </p>
                         <p>
                           <span className="font-medium">Status:</span>{' '}
                           <span className={`font-bold ${
-                            order.paymentStatus === 'paid' ? 'text-green-600' : 'text-yellow-600'
+                            order.paymentStatus === PaymentStatusCode.PAID ? 'text-green-600' : 'text-yellow-600'
                           }`}>
-                            {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}
+                            {getPaymentStatusDisplay(order.paymentStatus)}
                           </span>
                         </p>
                         {order.trackingNumber && (

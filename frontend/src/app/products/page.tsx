@@ -158,7 +158,7 @@ export default function ProductsPage() {
                 <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search products... (auto-search with debouncing)"
+                  placeholder="Search products..."
                   value={searchQuery}
                   onChange={handleSearchInputChange}
                   className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
