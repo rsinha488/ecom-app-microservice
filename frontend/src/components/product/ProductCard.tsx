@@ -128,7 +128,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             <button
               onClick={handleAddToCart}
               disabled={product.stock <= 0}
-              className={`p-3 rounded-lg transition-all duration-300 ${
+              className={`p-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-all duration-300 ${
                 product.stock > 0
                   ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md hover:shadow-lg'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'

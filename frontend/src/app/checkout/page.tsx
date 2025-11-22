@@ -180,7 +180,7 @@ export default function CheckoutPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
                         City *
@@ -214,7 +214,7 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700 mb-1">
                         ZIP/Postal Code *
@@ -265,7 +265,7 @@ export default function CheckoutPage() {
                       value={PaymentMethodCode.CREDIT_CARD}
                       checked={formData.paymentMethod === PaymentMethodCode.CREDIT_CARD}
                       onChange={handleInputChange}
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+                      className="h-5 w-5 sm:h-4 sm:w-4 text-indigo-600 focus:ring-indigo-500"
                       disabled
                     />
                     <span className="ml-3 text-gray-900 font-medium">Credit Card</span>
@@ -278,7 +278,7 @@ export default function CheckoutPage() {
                       value={PaymentMethodCode.DEBIT_CARD}
                       checked={formData.paymentMethod === PaymentMethodCode.DEBIT_CARD}
                       onChange={handleInputChange}
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+                      className="h-5 w-5 sm:h-4 sm:w-4 text-indigo-600 focus:ring-indigo-500"
                       disabled
                     />
                     <span className="ml-3 text-gray-900 font-medium">Debit Card</span>
@@ -291,7 +291,7 @@ export default function CheckoutPage() {
                       value={PaymentMethodCode.PAYPAL}
                       checked={formData.paymentMethod === PaymentMethodCode.PAYPAL}
                       onChange={handleInputChange}
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+                      className="h-5 w-5 sm:h-4 sm:w-4 text-indigo-600 focus:ring-indigo-500"
                       disabled
                     />
                     <span className="ml-3 text-gray-900 font-medium">PayPal</span>
@@ -304,7 +304,7 @@ export default function CheckoutPage() {
                       value={PaymentMethodCode.CASH_ON_DELIVERY}
                       checked={formData.paymentMethod === PaymentMethodCode.CASH_ON_DELIVERY}
                       onChange={handleInputChange}
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+                      className="h-5 w-5 sm:h-4 sm:w-4 text-indigo-600 focus:ring-indigo-500"
                     />
                     <span className="ml-3 text-gray-900 font-medium">Cash on Delivery</span>
                   </label>
@@ -358,7 +358,7 @@ export default function CheckoutPage() {
               <h2 className="text-xl font-bold text-gray-900 mb-4">Order Summary</h2>
 
               {/* Cart Items */}
-              <div className="space-y-3 mb-6 max-h-64 overflow-y-auto">
+              <div className="space-y-3 mb-6 max-h-48 sm:max-h-64 overflow-y-auto">
                 {items.map((item) => (
                   <div key={item._id} className="flex items-center space-x-3 pb-3 border-b border-gray-100">
                     <div className="flex-shrink-0 w-16 h-16 bg-gray-200 rounded-lg overflow-hidden relative">

@@ -1,0 +1,22 @@
+# robots.txt for E-commerce Platform
+# Generated for production SEO optimization
+
+# Allow all crawlers full access
+User-agent: *
+Allow: /
+
+# Disallow admin and API routes from being indexed
+Disallow: /api/
+Disallow: /admin/
+Disallow: /auth/
+
+# Disallow cart and checkout (user-specific pages)
+Disallow: /cart
+Disallow: /checkout
+Disallow: /orders
+
+# Sitemap location
+Sitemap: https://yourdomain.com/sitemap.xml
+
+# Crawl delay (optional, prevents overloading server)
+Crawl-delay: 1

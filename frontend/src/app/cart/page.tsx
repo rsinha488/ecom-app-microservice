@@ -69,10 +69,10 @@ export default function CartPage() {
             {items.map((item) => (
               <div
                 key={item._id}
-                className="bg-white rounded-lg shadow-sm p-6 flex items-center space-x-4"
+                className="bg-white rounded-lg shadow-sm p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4"
               >
-                {/* Product Image */}
-                <div className="flex-shrink-0 w-24 h-24 bg-gray-200 rounded-lg overflow-hidden">
+                {/* Product Image - smaller on mobile */}
+                <div className="flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 bg-gray-200 rounded-lg overflow-hidden">
                   {item.imageUrl ? (
                     <Image
                       src={item.imageUrl}
@@ -83,24 +83,24 @@ export default function CartPage() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <FiShoppingBag className="h-12 w-12 text-gray-400" />
+                      <FiShoppingBag className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400" />
                     </div>
                   )}
                 </div>
 
-                {/* Product Details */}
-                <div className="flex-1 min-w-0">
+                {/* Product Details - full width on mobile */}
+                <div className="flex-1 min-w-0 w-full sm:w-auto">
                   <Link
                     href={`/products/${item._id}`}
-                    className="text-lg font-semibold text-gray-900 hover:text-indigo-600 line-clamp-1"
+                    className="text-base sm:text-lg font-semibold text-gray-900 hover:text-indigo-600 line-clamp-2"
                   >
                     {item.name}
                   </Link>
-                  <p className="text-sm text-gray-600 line-clamp-2 mt-1">
+                  <p className="text-sm text-gray-600 line-clamp-2 mt-1 hidden sm:block">
                     {item.description}
                   </p>
                   <div className="mt-2 flex items-center space-x-4">
-                    <span className="text-lg font-bold text-indigo-600">
+                    <span className="text-lg sm:text-xl font-bold text-indigo-600">
                       ${item.price.toFixed(2)}
                     </span>
                     {item.stock <= 10 && (
@@ -111,36 +111,39 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                {/* Quantity Controls */}
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={() => handleUpdateQuantity(item._id, item.quantity - 1)}
-                    disabled={item.quantity <= 1}
-                    className="p-1 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <FiMinus className="h-4 w-4" />
-                  </button>
-                  <span className="w-12 text-center font-medium">{item.quantity}</span>
-                  <button
-                    onClick={() => handleUpdateQuantity(item._id, item.quantity + 1)}
-                    disabled={item.quantity >= item.stock}
-                    className="p-1 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <FiPlus className="h-4 w-4" />
-                  </button>
-                </div>
+                {/* Quantity Controls and Total - stacked on mobile */}
+                <div className="flex items-center justify-between w-full sm:w-auto gap-4">
+                  {/* Quantity Controls - larger touch targets on mobile */}
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <button
+                      onClick={() => handleUpdateQuantity(item._id, item.quantity - 1)}
+                      disabled={item.quantity <= 1}
+                      className="p-2 sm:p-1.5 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    >
+                      <FiMinus className="h-5 w-5 sm:h-4 sm:w-4" />
+                    </button>
+                    <span className="w-12 sm:w-14 text-center font-medium text-base sm:text-lg">{item.quantity}</span>
+                    <button
+                      onClick={() => handleUpdateQuantity(item._id, item.quantity + 1)}
+                      disabled={item.quantity >= item.stock}
+                      className="p-2 sm:p-1.5 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    >
+                      <FiPlus className="h-5 w-5 sm:h-4 sm:w-4" />
+                    </button>
+                  </div>
 
-                {/* Item Total */}
-                <div className="text-right">
-                  <p className="text-lg font-bold text-gray-900">
-                    ${(item.price * item.quantity).toFixed(2)}
-                  </p>
-                  <button
-                    onClick={() => handleRemoveItem(item._id)}
-                    className="mt-2 text-red-600 hover:text-red-700 text-sm"
-                  >
-                    <FiTrash2 className="inline h-4 w-4" />
-                  </button>
+                  {/* Item Total and Remove */}
+                  <div className="flex items-center sm:flex-col gap-3 sm:gap-2">
+                    <p className="text-lg sm:text-xl font-bold text-gray-900">
+                      ${(item.price * item.quantity).toFixed(2)}
+                    </p>
+                    <button
+                      onClick={() => handleRemoveItem(item._id)}
+                      className="text-red-600 hover:text-red-700 p-2 sm:p-0 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center sm:inline"
+                    >
+                      <FiTrash2 className="h-5 w-5 sm:h-4 sm:w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

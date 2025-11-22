@@ -98,14 +98,14 @@ export default function Header() {
             {/* Cart */}
             <Link
               href="/cart"
-              className={`relative p-2 transition rounded-lg
+              className={`relative p-2 min-w-[44px] min-h-[44px] flex items-center justify-center transition rounded-lg
                 ${isActiveLink('/cart')
                   ? 'text-indigo-600 bg-indigo-50'
                   : 'text-gray-700 hover:text-indigo-600 hover:bg-gray-50'}`}
             >
               <FiShoppingCart className="h-6 w-6" />
               {cartItemsCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs font-bold rounded-full h-6 w-6 sm:h-5 sm:w-5 flex items-center justify-center">
                   {cartItemsCount > 99 ? '99+' : cartItemsCount}
                 </span>
               )}
@@ -181,7 +181,7 @@ export default function Header() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-gray-700 hover:text-indigo-600"
+              className="md:hidden p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-700 hover:text-indigo-600 rounded-lg hover:bg-gray-50 transition"
             >
               {mobileMenuOpen ? (
                 <FiX className="h-6 w-6" />
@@ -197,7 +197,7 @@ export default function Header() {
           <div className="md:hidden border-t border-gray-200 py-4 space-y-2">
             <Link
               href="/products"
-              className={`block px-4 py-2 rounded-lg text-sm font-medium
+              className={`block px-4 py-3 rounded-lg text-base font-medium min-h-[44px] flex items-center
                 ${isActiveLink('/products')
                   ? 'text-indigo-600 bg-indigo-50'
                   : 'text-gray-700 hover:bg-gray-100'}`}
@@ -207,7 +207,7 @@ export default function Header() {
             </Link>
             <Link
               href="/orders"
-              className={`block px-4 py-2 rounded-lg text-sm font-medium
+              className={`block px-4 py-3 rounded-lg text-base font-medium min-h-[44px] flex items-center
                 ${isActiveLink('/orders')
                   ? 'text-indigo-600 bg-indigo-50'
                   : 'text-gray-700 hover:bg-gray-100'}`}

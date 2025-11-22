@@ -328,27 +328,31 @@ export default function OrdersPage() {
             </div>
 
             {/* Status Filters */}
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <div className="flex items-center space-x-2 text-sm font-medium text-gray-700 flex-shrink-0">
                 <FiFilter className="h-4 w-4" />
                 <span>Filter:</span>
               </div>
-              {STATUS_FILTERS.map((filter) => (
-                <button
-                  key={filter.value}
-                  onClick={() => handleStatusFilter(filter.value)}
-                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                    selectedStatus === filter.value
-                      ? 'bg-indigo-600 text-white shadow-md transform scale-105'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {filter.label}
-                </button>
-              ))}
+
+              {/* Filter buttons with horizontal scroll on mobile */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto scrollbar-hide flex-1">
+                {STATUS_FILTERS.map((filter) => (
+                  <button
+                    key={filter.value}
+                    onClick={() => handleStatusFilter(filter.value)}
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all whitespace-nowrap flex-shrink-0 ${
+                      selectedStatus === filter.value
+                        ? 'bg-indigo-600 text-white shadow-md transform scale-105'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
+              </div>
 
               {/* Sort Controls */}
-              <div className="ml-auto flex items-center space-x-2">
+              <div className="flex items-center space-x-2 w-full sm:w-auto sm:ml-auto">
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as 'date' | 'amount')}
@@ -388,63 +392,72 @@ export default function OrdersPage() {
             {filteredAndSortedOrders.map((order) => (
               <div key={order._id} className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow overflow-hidden border border-gray-200">
                 {/* Order Header */}
-                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-6 py-5 border-b border-gray-200">
-                  <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    {/* Left section - Order Number */}
                     <div className="flex items-center space-x-4">
-                      <div className="flex items-center justify-center w-12 h-12 bg-indigo-600 rounded-xl">
+                      <div className="flex items-center justify-center w-12 h-12 bg-indigo-600 rounded-xl flex-shrink-0">
                         <FiPackage className="h-6 w-6 text-white" />
                       </div>
                       <div>
                         <p className="text-xs text-gray-600 font-medium">Order Number</p>
-                        <p className="font-mono font-bold text-lg text-gray-900">
+                        <p className="font-mono font-bold text-base sm:text-lg text-gray-900">
                           {order.orderNumber}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <FiCalendar className="h-4 w-4 text-gray-500" />
-                      <div>
-                        <p className="text-xs text-gray-600">Order Date</p>
-                        <p className="font-semibold text-gray-900">
-                          {new Date(order.createdAt).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })}
-                        </p>
+
+                    {/* Middle section - Date, Amount, Status - stacks on mobile */}
+                    <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                      <div className="flex items-center space-x-2">
+                        <FiCalendar className="h-4 w-4 text-gray-500" />
+                        <div>
+                          <p className="text-xs text-gray-600">Order Date</p>
+                          <p className="font-semibold text-sm sm:text-base text-gray-900">
+                            {new Date(order.createdAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <FiDollarSign className="h-4 w-4 text-green-600" />
-                      <div>
-                        <p className="text-xs text-gray-600">Total Amount</p>
-                        <p className="font-bold text-xl text-green-600">
-                          ${order.totalAmount.toFixed(2)}
-                        </p>
+
+                      <div className="flex items-center space-x-2">
+                        <FiDollarSign className="h-4 w-4 text-green-600" />
+                        <div>
+                          <p className="text-xs text-gray-600">Total Amount</p>
+                          <p className="font-bold text-lg sm:text-xl text-green-600">
+                            ${order.totalAmount.toFixed(2)}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
+
                       <OrderStatusBadge status={order.status} size="lg" />
-                      {canCancelOrder(order.status) && (
-                        <button
-                          onClick={() => setOrderToCancel({ id: order._id, number: order.orderNumber })}
-                          disabled={cancellingOrderId === order._id}
-                          className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium text-sm transition-all flex items-center space-x-2"
-                        >
-                          {cancellingOrderId === order._id ? (
-                            <>
-                              <FiRefreshCw className="h-4 w-4 animate-spin" />
-                              <span>Cancelling...</span>
-                            </>
-                          ) : (
-                            <>
-                              <FiXCircle className="h-4 w-4" />
-                              <span>Cancel Order</span>
-                            </>
-                          )}
-                        </button>
-                      )}
                     </div>
+
+                    {/* Right section - Cancel button */}
+                    {canCancelOrder(order.status) && (
+                      <button
+                        onClick={() => setOrderToCancel({ id: order._id, number: order.orderNumber })}
+                        disabled={cancellingOrderId === order._id}
+                        className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium text-sm transition-all flex items-center justify-center space-x-2 min-w-[140px] self-start lg:self-auto"
+                      >
+                        {cancellingOrderId === order._id ? (
+                          <>
+                            <FiRefreshCw className="h-4 w-4 animate-spin" />
+                            <span className="hidden sm:inline">Cancelling...</span>
+                            <span className="sm:hidden">Wait...</span>
+                          </>
+                        ) : (
+                          <>
+                            <FiXCircle className="h-4 w-4" />
+                            <span className="hidden sm:inline">Cancel Order</span>
+                            <span className="sm:hidden">Cancel</span>
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
 

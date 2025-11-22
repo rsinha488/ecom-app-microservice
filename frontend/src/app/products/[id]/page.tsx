@@ -126,7 +126,7 @@ export default function ProductDetailPage() {
             {/* Product Images */}
             <div className="space-y-4">
               {/* Main Image */}
-              <div className="relative w-full aspect-square bg-gray-100 rounded-lg overflow-hidden min-h-[400px] lg:min-h-[500px]">
+              <div className="relative w-full aspect-square bg-gray-100 rounded-lg overflow-hidden min-h-[300px] sm:min-h-[400px] lg:min-h-[500px]">
                 <Image
                   src={product.imageUrl || '/placeholder.png'}
                   alt={product.name}
@@ -137,7 +137,7 @@ export default function ProductDetailPage() {
                 />
                 {!inStock && (
                   <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <span className="text-white text-xl font-bold">Out of Stock</span>
+                    <span className="text-white text-base sm:text-xl font-bold">Out of Stock</span>
                   </div>
                 )}
               </div>
@@ -171,25 +171,25 @@ export default function ProductDetailPage() {
             <div className="space-y-6">
               {/* Title and Rating */}
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
-                <div className="flex items-center space-x-4">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                   <div className="flex items-center">
                     {[...Array(5)].map((_, i) => (
                       <FiStar
                         key={i}
-                        className={`h-5 w-5 ${
+                        className={`h-4 w-4 sm:h-5 sm:w-5 ${
                           i < Math.floor(product.rating || 0)
                             ? 'text-yellow-400 fill-current'
                             : 'text-gray-300'
                         }`}
                       />
                     ))}
-                    <span className="ml-2 text-gray-600">
+                    <span className="ml-2 text-sm sm:text-base text-gray-600">
                       {product.rating?.toFixed(1) || '0.0'}
                     </span>
                   </div>
                   {inStock && (
-                    <span className="text-green-600 font-medium">In Stock ({product.stock})</span>
+                    <span className="text-sm sm:text-base text-green-600 font-medium">In Stock ({product.stock})</span>
                   )}
                 </div>
               </div>
@@ -197,7 +197,7 @@ export default function ProductDetailPage() {
               {/* Price */}
               <div>
                 <div className="flex items-baseline space-x-3">
-                  <span className="text-4xl font-bold text-indigo-600">
+                  <span className="text-3xl sm:text-4xl font-bold text-indigo-600">
                     ${product.price.toFixed(2)}
                   </span>
                   {product.compareAtPrice && product.compareAtPrice > product.price && (
@@ -242,22 +242,22 @@ export default function ProductDetailPage() {
                     <button
                       onClick={() => handleQuantityChange(quantity - 1)}
                        disabled={quantity <= 1}
-                      className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-12 h-12 sm:w-10 sm:h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed text-lg sm:text-base font-medium"
                     >
                       -
                     </button>
                     <input
                       type="text"
-                      
+
                       value={quantity}
                       disabled
                       // onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
-                      className="w-20 h-10 text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent "
+                      className="w-20 h-12 sm:h-10 text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg sm:text-base font-medium"
                     />
                     <button
                       onClick={() => handleQuantityChange(quantity + 1)}
                       disabled={quantity >= product.stock}
-                      className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-12 h-12 sm:w-10 sm:h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed text-lg sm:text-base font-medium"
                     >
                       +
                     </button>
