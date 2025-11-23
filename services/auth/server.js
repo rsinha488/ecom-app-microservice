@@ -21,10 +21,8 @@ app.use(helmet({
 // Compression
 app.use(compression());
 
-// Trust proxy (for production behind load balancer)
-if (isProduction) {
-  app.set('trust proxy', 1);
-}
+// Trust proxy (required when behind NGINX/reverse proxy)
+app.set('trust proxy', 1);
 
 // Rate Limiting
 const limiter = rateLimit({
@@ -48,10 +46,10 @@ const authLimiter = rateLimit({
 });
 
 // Apply rate limiting
-app.use('/api/', limiter);
-app.use('/api/v1/auth/login', authLimiter);
-app.use('/api/v1/auth/register', authLimiter);
-app.use('/api/v1/auth/oauth/token', authLimiter);
+app.use('/:version/', limiter);
+app.use('/:version/auth/login', authLimiter);
+app.use('/:version/auth/register', authLimiter);
+app.use('/:version/oauth/token', authLimiter);
 
 // CORS Configuration
 const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -79,11 +77,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Connect to Database
 connectDB();
 
-// API Version Routes
-app.use('/api/:version/auth', validateVersion, authRoutesV1);
-
-// Backwards compatibility (no version in URL defaults to v1)
-app.use('/auth', authRoutesV1);
+// API Routes - Dynamic version routing
+app.use('/:version/auth', validateVersion, authRoutesV1);
 
 // Root endpoint
 app.get('/', (req, res) => {

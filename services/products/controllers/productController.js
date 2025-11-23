@@ -91,18 +91,23 @@ exports.getAllProducts = async (req, res) => {
     const total = await Product.countDocuments(query);
 
     // Return success response with products and pagination info
-    res.status(200).json(
-      ErrorResponse.success(
-        {
-          products,
-          count: products.length,
-          total,
-          page,
-          pages: Math.ceil(total / limit)
-        },
-        'Products retrieved successfully'
-      )
+    const response = ErrorResponse.success(
+      {
+        products,
+        count: products.length
+      },
+      'Products retrieved successfully'
     );
+
+    // Add pagination metadata
+    response.meta = {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit)
+    };
+
+    res.status(200).json(response);
 
   } catch (error) {
     // Log error for debugging (in production, use proper logging service)

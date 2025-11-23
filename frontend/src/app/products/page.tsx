@@ -54,10 +54,10 @@ export default function ProductsPage() {
   // Memoized category fetch function
   const fetchCategories = useCallback(async () => {
     try {
-      const response = await fetch('/api/categories');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_CATEGORIES_URL}/v1/categories`);
       if (response.ok) {
         const data = await response.json();
-        setCategories(data.categories || []);
+        setCategories(data.data?.categories || data.categories || []);
       }
     } catch (error) {
       console.error('Failed to fetch categories:', error);

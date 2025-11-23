@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Call auth service
-    const response = await fetch(`${AUTH_API_URL}/api/v1/auth/register`, {
+    const response = await fetch(`${AUTH_API_URL}/v1/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

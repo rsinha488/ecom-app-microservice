@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user info from auth service
-    const response = await fetch(`${AUTH_API_URL}/api/v1/auth/oauth/userinfo`, {
+    const response = await fetch(`${AUTH_API_URL}/v1/auth/oauth/userinfo`, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
       },
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      const retryResponse = await fetch(`${AUTH_API_URL}/api/v1/auth/oauth/userinfo`, {
+      const retryResponse = await fetch(`${AUTH_API_URL}/v1/auth/oauth/userinfo`, {
         headers: {
           'Authorization': `Bearer ${newAccessToken}`,
         },

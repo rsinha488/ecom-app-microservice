@@ -124,10 +124,11 @@ export function createEnhancedAPIClient(config: APIClientConfig): AxiosInstance 
         try {
           const refreshToken = localStorage.getItem('refreshToken');
           if (refreshToken) {
-            const response = await axios.post(`${AUTH_URL}/api/v1/oauth/token`, {
+            const response = await axios.post(`${AUTH_URL}/v1/auth/oauth/token`, {
               grant_type: 'refresh_token',
               refresh_token: refreshToken,
-              client_id: process.env.NEXT_PUBLIC_OAUTH_CLIENT_ID,
+              client_id: process.env.NEXT_PUBLIC_OAUTH_CLIENT_ID || 'ecommerce-client',
+              client_secret: process.env.NEXT_PUBLIC_OAUTH_CLIENT_SECRET || 'ecommerce-secret-change-in-production',
             });
 
             const { access_token, refresh_token } = response.data;

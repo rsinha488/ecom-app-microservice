@@ -80,6 +80,7 @@ const ordersSlice = createSlice({
       })
       .addCase(fetchUserOrders.fulfilled, (state, action) => {
         state.loading = false;
+        // API returns: { data: { orders: [...], count: N, userId: "..." } }
         state.items = action.payload.data.orders;
       })
       .addCase(fetchUserOrders.rejected, (state, action) => {

@@ -224,6 +224,13 @@ exports.token = async (req, res) => {
 
     // Validate client credentials
     const client = await Client.findOne({ client_id, isActive: true });
+    console.log('[Token] Client lookup:', {
+      client_id,
+      found: !!client,
+      secretMatch: client ? client.client_secret === client_secret : false,
+      dbSecret: client ? client.client_secret : 'N/A',
+      providedSecret: client_secret
+    });
     if (!client || client.client_secret !== client_secret) {
       return res.status(401).json({
         error: 'invalid_client',

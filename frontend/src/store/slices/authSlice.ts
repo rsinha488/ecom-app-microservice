@@ -97,7 +97,7 @@ export const checkAuth = createAsyncThunk(
       }
 
       // Verify with server (suppress 401 errors in console as they're expected)
-      const response = await fetch('/api/auth/me', {
+      const response = await fetch('/auth/me', {
         // Don't log 401 errors to console - they're expected when not logged in
         credentials: 'same-origin',
       });
@@ -122,7 +122,7 @@ export const checkAuth = createAsyncThunk(
 
 export const logout = createAsyncThunk('auth/logout', async (_, { rejectWithValue }) => {
   try {
-    const response = await fetch('/api/auth/logout', {
+    const response = await fetch('/auth/logout', {
       method: 'POST',
     });
 
@@ -140,7 +140,7 @@ export const refreshSession = createAsyncThunk(
   'auth/refreshSession',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/auth/refresh', {
+      const response = await fetch('/auth/refresh', {
         method: 'POST',
       });
 

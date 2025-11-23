@@ -23,7 +23,7 @@ export async function PATCH(
     console.log('[Cancel Order API] Cancelling order:', id);
 
     // Call orders service to cancel the order
-    const response = await fetch(`${ORDERS_API_URL}/api/v1/orders/${id}/cancel`, {
+    const response = await fetch(`${ORDERS_API_URL}/v1/orders/${id}/cancel`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${accessToken}`,

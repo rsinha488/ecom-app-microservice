@@ -26,7 +26,7 @@ interface ProductLayoutProps {
  */
 async function getProduct(productId: string) {
   try {
-    const response = await fetch(`${PRODUCTS_API_URL}/api/v1/products/${productId}`, {
+    const response = await fetch(`${PRODUCTS_API_URL}/v1/products/${productId}`, {
       next: { revalidate: 60 }, // Revalidate every minute
     });
 

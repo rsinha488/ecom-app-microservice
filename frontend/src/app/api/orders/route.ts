@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     // First, get user info from the access token to get userId
     // We need to fetch user info to get the userId
-    const userInfoResponse = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:8080'}/api/v1/auth/oauth/userinfo`, {
+    const userInfoResponse = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:8080'}/v1/auth/oauth/userinfo`, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
       },
@@ -48,8 +48,8 @@ export async function GET(request: NextRequest) {
     console.log('[Orders API] User ID:', userId);
 
     // Fetch orders from orders service using user-specific endpoint
-    console.log('[Orders API] Fetching from:', `${ORDERS_API_URL}/api/v1/orders/user/${userId}`);
-    const response = await fetch(`${ORDERS_API_URL}/api/v1/orders/user/${userId}`, {
+    console.log('[Orders API] Fetching from:', `${ORDERS_API_URL}/v1/orders/user/${userId}`);
+    const response = await fetch(`${ORDERS_API_URL}/v1/orders/user/${userId}`, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
       },
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
 
     // Get user info to extract userId
     const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:8080';
-    const userInfoResponse = await fetch(`${AUTH_URL}/api/v1/auth/oauth/userinfo`, {
+    const userInfoResponse = await fetch(`${AUTH_URL}/v1/auth/oauth/userinfo`, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
       },
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
     console.log('[Orders API] Creating order:', orderNumber, 'for user:', userId);
 
     // Create order via orders service
-    const response = await fetch(`${ORDERS_API_URL}/api/v1/orders`, {
+    const response = await fetch(`${ORDERS_API_URL}/v1/orders`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,

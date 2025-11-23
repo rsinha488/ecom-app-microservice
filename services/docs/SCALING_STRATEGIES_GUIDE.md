@@ -392,7 +392,7 @@ Uses Redis for rate limiting across all service instances:
 ```javascript
 const distributedRateLimit = require('./shared/middleware/distributedRateLimit');
 
-app.use('/api/v1/products', distributedRateLimit({
+app.use('/v1/products', distributedRateLimit({
   windowMs: 15 * 60 * 1000,  // 15 minutes
   max: 100,                   // 100 requests per window
   keyPrefix: 'ratelimit:products'
@@ -515,7 +515,7 @@ proxy_cache_path /var/cache/nginx/api
     max_size=1g
     inactive=60m;
 
-location /api/v1/products {
+location /v1/products {
     proxy_cache api_cache;
     proxy_cache_methods GET HEAD;
     proxy_cache_valid 200 5m;
@@ -535,12 +535,12 @@ limit_req_zone $binary_remote_addr zone=auth:10m rate=5r/s;
 limit_req_zone $binary_remote_addr zone=api:10m rate=100r/s;
 
 # Apply to locations
-location /api/v1/auth/login {
+location /v1/auth/login {
     limit_req zone=auth burst=5 nodelay;
     proxy_pass http://auth_backend;
 }
 
-location /api/v1/products {
+location /v1/products {
     limit_req zone=general burst=20 nodelay;
     proxy_pass http://products_backend;
 }
@@ -679,7 +679,7 @@ productSchema.index({ category: 1, inStock: 1, price: 1 });
 #### 4. Pagination
 
 ```javascript
-// GET /api/v1/products?page=1&limit=20
+// GET /v1/products?page=1&limit=20
 const page = parseInt(req.query.page) || 1;
 const limit = parseInt(req.query.limit) || 20;
 const skip = (page - 1) * limit;
@@ -735,7 +735,7 @@ upstream products_backend {
     keepalive 32;  # Maintain 32 idle connections
 }
 
-location /api/v1/products {
+location /v1/products {
     proxy_http_version 1.1;
     proxy_set_header Connection "";
 }

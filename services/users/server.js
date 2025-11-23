@@ -37,12 +37,13 @@ const authLimiter = rateLimit({
   }
 });
 
-app.use('/api/', limiter);
+// Rate limiter applies to versioned routes
+app.use('/:version/', limiter);
 
 // CORS - Disabled: API Gateway handles CORS
 // app.use(cors());
-app.use('/api/v1/users/login', authLimiter);
-app.use('/api/v1/users/register', authLimiter);
+app.use('/:version/users/login', authLimiter);
+app.use('/:version/users/register', authLimiter);
 
 // Body Parser
 app.use(express.json({ limit: '10mb' }));
@@ -51,11 +52,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Connect to Database
 connectDB();
 
-// API Version Routes
-app.use('/api/:version/users', validateVersion, userRoutesV1);
-
-// Backwards compatibility
-app.use('/api/users', userRoutesV1);
+// API Routes - Dynamic version routing
+app.use('/:version/users', validateVersion, userRoutesV1);
 
 // Root endpoint
 app.get('/', (req, res) => {

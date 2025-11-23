@@ -201,7 +201,7 @@ export default function OrdersPage() {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
               <FiXCircle className="h-8 w-8 text-red-600" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Oops! Something went wrong</h2>
+            <h2 className="text-3xl font-extrabold text-gray-900 mb-2">Oops! Something went wrong</h2>
             <p className="text-red-600 font-medium mb-6">{error}</p>
             {error.includes('log in') ? (
               <a
@@ -229,13 +229,19 @@ export default function OrdersPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-8">My Orders</h1>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-3xl font-extrabold text-gray-900 mb-2">My Orders</h1>
+              <p className="text-gray-600">Track and manage your order history</p>
+            </div>
+
+          </div>
           <div className="bg-white rounded-2xl shadow-xl p-16 text-center">
             <div className="inline-flex items-center justify-center w-32 h-32 bg-indigo-50 rounded-full mb-6">
               <FiPackage className="h-16 w-16 text-indigo-600" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-3">No orders yet</h2>
-            <p className="text-lg text-gray-600 mb-8 max-w-md mx-auto">
+            <h2 className="text-lg font-extrabold text-gray-900 mb-3">No orders yet</h2>
+            <p className="text-gray-600 mb-8 max-w-md mx-auto">
               Start shopping to place your first order and track it here!
             </p>
             <a
@@ -257,59 +263,11 @@ export default function OrdersPage() {
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">My Orders</h1>
+              <h1 className="text-3xl font-extrabold text-gray-900 mb-2">My Orders</h1>
               <p className="text-gray-600">Track and manage your order history</p>
             </div>
 
-            {/* WebSocket Connection Status */}
-            {/* <div className="flex items-center space-x-3 bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-200">
-              {isConnected ? (
-                <>
-                  <div className="relative">
-                    <FiWifi className="h-5 w-5 text-green-600" />
-                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                    </span>
-                  </div>
-                  <span className="text-sm text-green-700 font-semibold">Live Updates</span>
-                </>
-              ) : (
-                <>
-                  <FiWifiOff className="h-5 w-5 text-gray-400" />
-                  <span className="text-sm text-gray-500">Connecting...</span>
-                </>
-              )}
-            </div> */}
           </div>
-
-          {/* Stats Cards */}
-          {/* <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <p className="text-xs text-gray-600 font-medium mb-1">Total Orders</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-            </div>
-            <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-4 shadow-sm border border-yellow-200 hover:shadow-md transition-shadow">
-              <p className="text-xs text-yellow-800 font-medium mb-1">Pending</p>
-              <p className="text-2xl font-bold text-yellow-900">{stats.pending}</p>
-            </div>
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 shadow-sm border border-blue-200 hover:shadow-md transition-shadow">
-              <p className="text-xs text-blue-800 font-medium mb-1">Processing</p>
-              <p className="text-2xl font-bold text-blue-900">{stats.processing}</p>
-            </div>
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 shadow-sm border border-purple-200 hover:shadow-md transition-shadow">
-              <p className="text-xs text-purple-800 font-medium mb-1">Shipped</p>
-              <p className="text-2xl font-bold text-purple-900">{stats.shipped}</p>
-            </div>
-            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 shadow-sm border border-green-200 hover:shadow-md transition-shadow">
-              <p className="text-xs text-green-800 font-medium mb-1">Delivered</p>
-              <p className="text-2xl font-bold text-green-900">{stats.delivered}</p>
-            </div>
-            <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl p-4 shadow-sm border border-indigo-200 hover:shadow-md transition-shadow">
-              <p className="text-xs text-indigo-800 font-medium mb-1">Total Spent</p>
-              <p className="text-2xl font-bold text-indigo-900">${stats.totalSpent.toFixed(0)}</p>
-            </div>
-          </div> */}
 
           {/* Filters and Search */}
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
@@ -340,11 +298,10 @@ export default function OrdersPage() {
                   <button
                     key={filter.value}
                     onClick={() => handleStatusFilter(filter.value)}
-                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all whitespace-nowrap flex-shrink-0 ${
-                      selectedStatus === filter.value
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all whitespace-nowrap flex-shrink-0 ${selectedStatus === filter.value
                         ? 'bg-indigo-600 text-white shadow-md transform scale-105'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                      }`}
                   >
                     {filter.label}
                   </button>
@@ -514,9 +471,8 @@ export default function OrdersPage() {
                         </p>
                         <p>
                           <span className="font-medium">Status:</span>{' '}
-                          <span className={`font-bold ${
-                            order.paymentStatus === PaymentStatusCode.PAID ? 'text-green-600' : 'text-yellow-600'
-                          }`}>
+                          <span className={`font-bold ${order.paymentStatus === PaymentStatusCode.PAID ? 'text-green-600' : 'text-yellow-600'
+                            }`}>
                             {getPaymentStatusDisplay(order.paymentStatus)}
                           </span>
                         </p>

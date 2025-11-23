@@ -869,12 +869,8 @@ exports.cancelOrder = async (req, res) => {
     }
 
     // Check if user owns this order (unless admin)
-    // JWT tokens can have either numeric roles (1, 2, 3) or string roles ('user', 'admin')
     const isAdmin = roles.some(role =>
-      role === 3 ||
-      role === 'admin' ||
-      role === 'Admin' ||
-      String(role).toLowerCase() === 'admin'
+      role === 3 || role === 'admin' || role === 'Admin'
     );
 
     // Compare both IDs as strings to ensure proper comparison
@@ -884,7 +880,6 @@ exports.cancelOrder = async (req, res) => {
     console.log('[Cancel Order] Authorization check:', {
       orderUserId,
       authUserId,
-      roles,
       isAdmin,
       match: orderUserId === authUserId
     });

@@ -20,7 +20,7 @@ const PRODUCTS_API_URL = process.env.NEXT_PUBLIC_PRODUCTS_URL || 'http://localho
  */
 async function getProducts() {
   try {
-    const response = await fetch(`${PRODUCTS_API_URL}/api/v1/products?limit=1000`, {
+    const response = await fetch(`${PRODUCTS_API_URL}/v1/products?limit=1000`, {
       next: { revalidate: 3600 }, // Revalidate every hour
     });
 

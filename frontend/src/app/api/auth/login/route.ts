@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Call auth service
-    const response = await fetch(`${AUTH_API_URL}/api/v1/auth/login`, {
+    const response = await fetch(`${AUTH_API_URL}/v1/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -39,7 +39,11 @@ export async function POST(request: NextRequest) {
     const isProduction = process.env.NODE_ENV === 'production';
 
     // Access token (short-lived, 15 minutes)
-    cookieStore.set('accessToken', data.accessToken, {
+    // Backend returns access_token (underscore), frontend uses accessToken
+    const accessToken = data.access_token || data.accessToken;
+    const refreshToken = data.refresh_token || data.refreshToken;
+
+    cookieStore.set('accessToken', accessToken, {
       httpOnly: true,
       secure: isProduction, // HTTPS only in production
       sameSite: 'lax',
@@ -48,7 +52,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Refresh token (long-lived, 7 days)
-    cookieStore.set('refreshToken', data.refreshToken, {
+    cookieStore.set('refreshToken', refreshToken, {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'lax',

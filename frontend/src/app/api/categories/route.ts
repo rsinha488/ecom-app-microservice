@@ -5,7 +5,7 @@ const CATEGORIES_API_URL = process.env.NEXT_PUBLIC_CATEGORIES_URL || 'http://loc
 export async function GET(request: NextRequest) {
   try {
     // Fetch categories from categories service
-    const response = await fetch(`${CATEGORIES_API_URL}/api/v1/categories`, {
+    const response = await fetch(`${CATEGORIES_API_URL}/v1/categories`, {
       cache: 'no-store',
     });
 

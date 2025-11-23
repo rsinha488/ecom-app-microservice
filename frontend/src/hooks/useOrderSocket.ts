@@ -72,7 +72,7 @@ export const useOrderSocket = (accessToken: string | null) => {
     socket.on('order:created', (data: OrderSocketEvent) => {
       console.log('[Socket] Order created:', data);
       setLastEvent(data);
-      toast.success(`✅ ${data.message}`, {
+      toast.success(`✅ ${data.message} Testing`, {
         position: 'top-right',
         autoClose: 5000,
       });

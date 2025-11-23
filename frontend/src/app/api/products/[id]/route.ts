@@ -10,7 +10,7 @@ export async function GET(
     const { id } = params;
 
     // Fetch product from products service
-    const response = await fetch(`${PRODUCTS_API_URL}/api/v1/products/${id}`);
+    const response = await fetch(`${PRODUCTS_API_URL}/v1/products/${id}`);
 
     if (!response.ok) {
       if (response.status === 404) {

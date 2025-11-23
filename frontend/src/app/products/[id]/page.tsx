@@ -242,22 +242,22 @@ export default function ProductDetailPage() {
                     <button
                       onClick={() => handleQuantityChange(quantity - 1)}
                        disabled={quantity <= 1}
-                      className="w-12 h-12 sm:w-10 sm:h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed text-lg sm:text-base font-medium"
+                      className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       -
                     </button>
                     <input
                       type="text"
-
+                      
                       value={quantity}
                       disabled
                       // onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
-                      className="w-20 h-12 sm:h-10 text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg sm:text-base font-medium"
+                      className="w-20 h-10 text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent "
                     />
                     <button
                       onClick={() => handleQuantityChange(quantity + 1)}
                       disabled={quantity >= product.stock}
-                      className="w-12 h-12 sm:w-10 sm:h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed text-lg sm:text-base font-medium"
+                      className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       +
                     </button>

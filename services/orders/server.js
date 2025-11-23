@@ -32,7 +32,8 @@ const limiter = rateLimit({
   legacyHeaders: false
 });
 
-app.use('/api/', limiter);
+// Rate limiter applies to versioned routes
+app.use('/:version/', limiter);
 
 // CORS - Disabled: API Gateway handles CORS
 // app.use(cors());
@@ -44,11 +45,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Connect to Database
 connectDB();
 
-// API Version Routes
-app.use('/api/:version/orders', validateVersion, orderRoutesV1);
-
-// Backwards compatibility
-app.use('/api/orders', orderRoutesV1);
+// API Routes - Dynamic version routing
+app.use('/:version/orders', validateVersion, orderRoutesV1);
 
 // Root endpoint
 app.get('/', (req, res) => {

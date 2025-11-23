@@ -133,7 +133,7 @@ export default function CheckoutPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center py-16">
             <FiShoppingBag className="mx-auto h-24 w-24 text-gray-400" />
-            <h2 className="mt-4 text-2xl font-bold text-gray-900">Your cart is empty</h2>
+            <h2 className="mt-4 text-3xl font-extrabold text-gray-900">Your cart is empty</h2>
             <p className="mt-2 text-gray-600">Add some items to your cart before checking out</p>
             <Link
               href="/products"
@@ -150,7 +150,7 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
+        <h1 className="text-3xl font-extrabold text-gray-900 mb-8">Checkout</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Checkout Form */}
@@ -160,7 +160,7 @@ export default function CheckoutPage() {
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex items-center mb-4">
                   <FiMapPin className="h-6 w-6 text-indigo-600 mr-2" />
-                  <h2 className="text-xl font-bold text-gray-900">Shipping Address</h2>
+                  <h2 className="text-xl font-semibold text-gray-900">Shipping Address</h2>
                 </div>
 
                 <div className="space-y-4">
@@ -175,7 +175,7 @@ export default function CheckoutPage() {
                       value={formData.street}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                       placeholder="123 Main Street"
                     />
                   </div>
@@ -192,7 +192,7 @@ export default function CheckoutPage() {
                         value={formData.city}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                         placeholder="New York"
                       />
                     </div>
@@ -208,7 +208,7 @@ export default function CheckoutPage() {
                         value={formData.state}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                         placeholder="NY"
                       />
                     </div>
@@ -229,7 +229,7 @@ export default function CheckoutPage() {
                         pattern="[0-9]*"
                         inputMode="numeric"
                         maxLength={10}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                         placeholder="10001"
                         onKeyPress={(e) => {
                           // Allow only numbers
@@ -251,7 +251,7 @@ export default function CheckoutPage() {
                         value={formData.country}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                         placeholder="United States"
                       />
                     </div>
@@ -263,7 +263,7 @@ export default function CheckoutPage() {
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex items-center mb-4">
                   <FiCreditCard className="h-6 w-6 text-indigo-600 mr-2" />
-                  <h2 className="text-xl font-bold text-gray-900">Payment Method</h2>
+                  <h2 className="text-xl font-semibold text-gray-900">Payment Method</h2>
                 </div>
 
                 <div className="space-y-3">
@@ -364,7 +364,7 @@ export default function CheckoutPage() {
           {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-sm p-6 sticky top-24">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Order Summary</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Order Summary</h2>
 
               {/* Cart Items */}
               <div className="space-y-3 mb-6 max-h-48 sm:max-h-64 overflow-y-auto">

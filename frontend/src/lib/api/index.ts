@@ -68,7 +68,7 @@ export const authAPI = {
    * @returns Access token and user info
    */
   login: (credentials: LoginCredentials & { client_id?: string; redirect_uri?: string; scope?: string }) =>
-    authClient.post<APIResponse<{ access_token: string; refresh_token: string; user: User }>>('/api/v1/auth/login', {
+    authClient.post<APIResponse<{ access_token: string; refresh_token: string; user: User }>>('/v1/auth/login', {
       ...credentials,
       client_id: credentials.client_id || process.env.NEXT_PUBLIC_OAUTH_CLIENT_ID,
       redirect_uri: credentials.redirect_uri || process.env.NEXT_PUBLIC_OAUTH_REDIRECT_URI,
@@ -81,14 +81,14 @@ export const authAPI = {
    * @returns Created user info
    */
   register: (data: RegisterData) =>
-    authClient.post<APIResponse<{ user: User }>>('/api/v1/auth/register', data),
+    authClient.post<APIResponse<{ user: User }>>('/v1/auth/register', data),
 
   /**
    * Get current user information
    * @returns User profile data
    */
   getUserInfo: () =>
-    authClient.get<APIResponse<User>>('/api/v1/oauth/userinfo'),
+    authClient.get<APIResponse<User>>('/v1/auth/oauth/userinfo'),
 
   /**
    * Refresh access token
@@ -96,17 +96,18 @@ export const authAPI = {
    * @returns New access token
    */
   refreshToken: (refresh_token: string) =>
-    authClient.post<APIResponse<{ access_token: string; refresh_token: string }>>('/api/v1/oauth/token', {
+    authClient.post<APIResponse<{ access_token: string; refresh_token: string }>>('/v1/auth/oauth/token', {
       grant_type: 'refresh_token',
       refresh_token,
-      client_id: process.env.NEXT_PUBLIC_OAUTH_CLIENT_ID,
+      client_id: process.env.NEXT_PUBLIC_OAUTH_CLIENT_ID || 'ecommerce-client',
+      client_secret: process.env.NEXT_PUBLIC_OAUTH_CLIENT_SECRET || 'ecommerce-secret-change-in-production',
     }),
 
   /**
    * Logout and revoke tokens
    */
   logout: () =>
-    authClient.post<APIResponse>('/api/v1/oauth/revoke'),
+    authClient.post<APIResponse>('/v1/auth/oauth/revoke'),
 
   /**
    * Get OIDC discovery configuration
@@ -135,7 +136,7 @@ export const productsAPI = {
     search?: string;
     sort?: string;
   }) =>
-    productsClient.get<APIResponse<{ products: Product[]; count: number }>>('/api/v1/products', { params }),
+    productsClient.get<APIResponse<{ products: Product[]; count: number }>>('/v1/products', { params }),
 
   /**
    * Get a single product by ID
@@ -143,7 +144,7 @@ export const productsAPI = {
    * @returns Product details
    */
   getProductById: (id: string) =>
-    productsClient.get<APIResponse<{ product: Product }>>(`/api/v1/products/${id}`),
+    productsClient.get<APIResponse<{ product: Product }>>(`/v1/products/${id}`),
 
   /**
    * Search products by query
@@ -151,7 +152,7 @@ export const productsAPI = {
    * @returns Matching products
    */
   searchProducts: (query: string) =>
-    productsClient.get<APIResponse<{ products: Product[]; count: number }>>('/api/v1/products/search', { params: { q: query } }),
+    productsClient.get<APIResponse<{ products: Product[]; count: number }>>('/v1/products/search', { params: { q: query } }),
 
   /**
    * Create a new product (Admin only)
@@ -159,7 +160,7 @@ export const productsAPI = {
    * @returns Created product
    */
   createProduct: (data: Partial<Product>) =>
-    productsClient.post<APIResponse<{ product: Product }>>('/api/v1/products', data),
+    productsClient.post<APIResponse<{ product: Product }>>('/v1/products', data),
 
   /**
    * Update a product (Admin only)
@@ -168,7 +169,7 @@ export const productsAPI = {
    * @returns Updated product
    */
   updateProduct: (id: string, data: Partial<Product>) =>
-    productsClient.put<APIResponse<{ product: Product }>>(`/api/v1/products/${id}`, data),
+    productsClient.put<APIResponse<{ product: Product }>>(`/v1/products/${id}`, data),
 
   /**
    * Delete a product (Admin only)
@@ -176,7 +177,7 @@ export const productsAPI = {
    * @returns Deletion confirmation
    */
   deleteProduct: (id: string) =>
-    productsClient.delete<APIResponse<{ deletedProductId: string }>>(`/api/v1/products/${id}`),
+    productsClient.delete<APIResponse<{ deletedProductId: string }>>(`/v1/products/${id}`),
 };
 
 // ============================================================================
@@ -189,7 +190,7 @@ export const categoriesAPI = {
    * @returns List of categories
    */
   getCategories: () =>
-    categoriesClient.get<APIResponse<{ categories: Category[]; count: number }>>('/api/v1/categories'),
+    categoriesClient.get<APIResponse<{ categories: Category[]; count: number }>>('/v1/categories'),
 
   /**
    * Get a single category by ID
@@ -197,7 +198,7 @@ export const categoriesAPI = {
    * @returns Category details
    */
   getCategoryById: (id: string) =>
-    categoriesClient.get<APIResponse<{ category: Category }>>(`/api/v1/categories/${id}`),
+    categoriesClient.get<APIResponse<{ category: Category }>>(`/v1/categories/${id}`),
 
   /**
    * Get a category by slug
@@ -205,7 +206,7 @@ export const categoriesAPI = {
    * @returns Category details
    */
   getCategoryBySlug: (slug: string) =>
-    categoriesClient.get<APIResponse<{ category: Category }>>(`/api/v1/categories/slug/${slug}`),
+    categoriesClient.get<APIResponse<{ category: Category }>>(`/v1/categories/slug/${slug}`),
 
   /**
    * Create a new category (Admin only)
@@ -213,7 +214,7 @@ export const categoriesAPI = {
    * @returns Created category
    */
   createCategory: (data: Partial<Category>) =>
-    categoriesClient.post<APIResponse<{ category: Category }>>('/api/v1/categories', data),
+    categoriesClient.post<APIResponse<{ category: Category }>>('/v1/categories', data),
 
   /**
    * Update a category (Admin only)
@@ -222,7 +223,7 @@ export const categoriesAPI = {
    * @returns Updated category
    */
   updateCategory: (id: string, data: Partial<Category>) =>
-    categoriesClient.put<APIResponse<{ category: Category }>>(`/api/v1/categories/${id}`, data),
+    categoriesClient.put<APIResponse<{ category: Category }>>(`/v1/categories/${id}`, data),
 
   /**
    * Delete a category (Admin only)
@@ -230,7 +231,7 @@ export const categoriesAPI = {
    * @returns Deletion confirmation
    */
   deleteCategory: (id: string) =>
-    categoriesClient.delete<APIResponse<{ deletedCategoryId: string }>>(`/api/v1/categories/${id}`),
+    categoriesClient.delete<APIResponse<{ deletedCategoryId: string }>>(`/v1/categories/${id}`),
 };
 
 // ============================================================================
@@ -243,7 +244,7 @@ export const usersAPI = {
    * @returns User profile
    */
   getCurrentUser: () =>
-    usersClient.get<APIResponse<{ user: User }>>('/api/v1/users/me'),
+    usersClient.get<APIResponse<{ user: User }>>('/v1/users/me'),
 
   /**
    * Get a user by ID (Admin only)
@@ -251,7 +252,7 @@ export const usersAPI = {
    * @returns User details
    */
   getUserById: (id: string) =>
-    usersClient.get<APIResponse<{ user: User }>>(`/api/v1/users/${id}`),
+    usersClient.get<APIResponse<{ user: User }>>(`/v1/users/${id}`),
 
   /**
    * Update user profile
@@ -260,7 +261,7 @@ export const usersAPI = {
    * @returns Updated user
    */
   updateUser: (id: string, data: Partial<User>) =>
-    usersClient.put<APIResponse<{ user: User }>>(`/api/v1/users/${id}`, data),
+    usersClient.put<APIResponse<{ user: User }>>(`/v1/users/${id}`, data),
 
   /**
    * Delete a user (Admin only)
@@ -268,7 +269,7 @@ export const usersAPI = {
    * @returns Deletion confirmation
    */
   deleteUser: (id: string) =>
-    usersClient.delete<APIResponse<{ deletedUserId: string }>>(`/api/v1/users/${id}`),
+    usersClient.delete<APIResponse<{ deletedUserId: string }>>(`/v1/users/${id}`),
 };
 
 // ============================================================================
@@ -282,7 +283,7 @@ export const ordersAPI = {
    * @returns List of user's orders
    */
   getUserOrders: (userId: string) =>
-    ordersClient.get<APIResponse<{ orders: Order[]; count: number; userId: string }>>(`/api/v1/orders/user/${userId}`),
+    ordersClient.get<APIResponse<{ orders: Order[]; count: number; userId: string }>>(`/v1/orders/user/${userId}`),
 
   /**
    * Get a single order by ID
@@ -290,7 +291,7 @@ export const ordersAPI = {
    * @returns Order details
    */
   getOrderById: (id: string) =>
-    ordersClient.get<APIResponse<{ order: Order }>>(`/api/v1/orders/${id}`),
+    ordersClient.get<APIResponse<{ order: Order }>>(`/v1/orders/${id}`),
 
   /**
    * Create a new order
@@ -298,7 +299,7 @@ export const ordersAPI = {
    * @returns Created order
    */
   createOrder: (data: CreateOrderData) =>
-    ordersClient.post<APIResponse<{ order: Order }>>('/api/v1/orders', data),
+    ordersClient.post<APIResponse<{ order: Order }>>('/v1/orders', data),
 
   /**
    * Update order status (Admin only)
@@ -313,7 +314,7 @@ export const ordersAPI = {
       oldStatusLabel: string;
       newStatus: number;
       newStatusLabel: string;
-    }>>(`/api/v1/orders/${id}/status`, { status }),
+    }>>(`/v1/orders/${id}/status`, { status }),
 
   /**
    * Get all available order statuses
@@ -327,7 +328,7 @@ export const ordersAPI = {
         label: string;
         color: string;
       }>;
-    }>>('/api/v1/orders/statuses'),
+    }>>('/v1/orders/statuses'),
 
   /**
    * Cancel an order
@@ -335,5 +336,5 @@ export const ordersAPI = {
    * @returns Updated order
    */
   cancelOrder: (id: string) =>
-    ordersClient.patch<APIResponse<{ order: Order }>>(`/api/v1/orders/${id}/cancel`),
+    ordersClient.patch<APIResponse<{ order: Order }>>(`/v1/orders/${id}/cancel`),
 };

@@ -62,9 +62,9 @@
 					"raw": "{\n  \"email\": \"testuser@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"Test User\"\n}"
 				},
 				"url": {
-					"raw": "{{base_url}}/api/v1/auth/register",
+					"raw": "{{base_url}}/v1/auth/register",
 					"host": ["{{base_url}}"],
-					"path": ["api", "v1", "auth", "register"]
+					"path": ["v1", "auth", "register"]
 				},
 				"description": "Register a new user account"
 			},
@@ -103,9 +103,9 @@
 					"raw": "{\n  \"email\": \"testuser@example.com\",\n  \"password\": \"password123\"\n}"
 				},
 				"url": {
-					"raw": "{{base_url}}/api/v1/auth/login",
+					"raw": "{{base_url}}/v1/auth/login",
 					"host": ["{{base_url}}"],
-					"path": ["api", "v1", "auth", "login"]
+					"path": [ "v1", "auth", "login"]
 				},
 				"description": "Login with email and password to get access and refresh tokens"
 			},
@@ -146,9 +146,9 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{base_url}}/api/v1/auth/oauth/userinfo",
+					"raw": "{{base_url}}/v1/auth/oauth/userinfo",
 					"host": ["{{base_url}}"],
-					"path": ["api", "v1", "auth", "oauth", "userinfo"]
+					"path": [ "v1", "auth", "oauth", "userinfo"]
 				},
 				"description": "Get current user information (requires access token)"
 			},
@@ -202,9 +202,9 @@
 					]
 				},
 				"url": {
-					"raw": "{{base_url}}/api/v1/auth/oauth/token",
+					"raw": "{{base_url}}/v1/auth/oauth/token",
 					"host": ["{{base_url}}"],
-					"path": ["api", "v1", "auth", "oauth", "token"]
+					"path": [ "v1", "auth", "oauth", "token"]
 				},
 				"description": "Refresh the access token using refresh token"
 			},
@@ -251,9 +251,9 @@
 					]
 				},
 				"url": {
-					"raw": "{{base_url}}/api/v1/auth/oauth/revoke",
+					"raw": "{{base_url}}/v1/auth/oauth/revoke",
 					"host": ["{{base_url}}"],
-					"path": ["api", "v1", "auth", "oauth", "revoke"]
+					"path": [ "v1", "auth", "oauth", "revoke"]
 				},
 				"description": "Revoke access token (logout)"
 			},
@@ -265,9 +265,9 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{base_url}}/api/v1/auth/.well-known/openid-configuration",
+					"raw": "{{base_url}}/v1/auth/.well-known/openid-configuration",
 					"host": ["{{base_url}}"],
-					"path": ["api", "v1", "auth", ".well-known", "openid-configuration"]
+					"path": [ "v1", "auth", ".well-known", "openid-configuration"]
 				},
 				"description": "Get OpenID Connect configuration"
 			},

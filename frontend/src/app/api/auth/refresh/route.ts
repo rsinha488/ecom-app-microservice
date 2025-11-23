@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Request new access token
-    const response = await fetch(`${AUTH_API_URL}/api/v1/auth/oauth/token`, {
+    const response = await fetch(`${AUTH_API_URL}/v1/auth/oauth/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

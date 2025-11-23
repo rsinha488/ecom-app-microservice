@@ -36,7 +36,7 @@ export default function CartPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center py-16">
             <FiShoppingBag className="mx-auto h-24 w-24 text-gray-400" />
-            <h2 className="mt-4 text-2xl font-bold text-gray-900">Your cart is empty</h2>
+            <h2 className="mt-4 text-3xl font-extrabold text-gray-900">Your cart is empty</h2>
             <p className="mt-2 text-gray-600">Start shopping to add items to your cart!</p>
             <Link
               href="/products"
@@ -54,7 +54,7 @@ export default function CartPage() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Shopping Cart</h1>
+          <h1 className="text-3xl font-extrabold text-gray-900">Shopping Cart</h1>
           <button
             onClick={handleClearCart}
             className="text-red-600 hover:text-red-700 text-sm font-medium"
@@ -152,7 +152,7 @@ export default function CartPage() {
           {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-sm p-6 sticky top-24">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Order Summary</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Order Summary</h2>
 
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-gray-600">

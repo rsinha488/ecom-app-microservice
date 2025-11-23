@@ -65,7 +65,7 @@ curl -X POST http://localhost:3000/auth/oauth/token \
 
 ### 4. Use Access Token
 ```bash
-curl http://localhost:3001/api/products \
+curl http://localhost:3001/products \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
@@ -75,13 +75,13 @@ curl http://localhost:3001/api/products \
 
 ```bash
 # List all products (public)
-curl http://localhost:3001/api/products
+curl http://localhost:3001/products
 
 # Get product by ID (public)
-curl http://localhost:3001/api/products/PRODUCT_ID
+curl http://localhost:3001/products/PRODUCT_ID
 
 # Create product (admin only)
-curl -X POST http://localhost:3001/api/products \
+curl -X POST http://localhost:3001/products \
   -H "Authorization: Bearer ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -93,13 +93,13 @@ curl -X POST http://localhost:3001/api/products \
   }'
 
 # Update product (admin only)
-curl -X PUT http://localhost:3001/api/products/PRODUCT_ID \
+curl -X PUT http://localhost:3001/products/PRODUCT_ID \
   -H "Authorization: Bearer ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"price": 899.99}'
 
 # Delete product (admin only)
-curl -X DELETE http://localhost:3001/api/products/PRODUCT_ID \
+curl -X DELETE http://localhost:3001/products/PRODUCT_ID \
   -H "Authorization: Bearer ACCESS_TOKEN"
 ```
 
@@ -107,10 +107,10 @@ curl -X DELETE http://localhost:3001/api/products/PRODUCT_ID \
 
 ```bash
 # List all categories (public)
-curl http://localhost:3002/api/categories
+curl http://localhost:3002/categories
 
 # Create category (admin only)
-curl -X POST http://localhost:3002/api/categories \
+curl -X POST http://localhost:3002/categories \
   -H "Authorization: Bearer ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -124,15 +124,15 @@ curl -X POST http://localhost:3002/api/categories \
 
 ```bash
 # Get all users (admin only)
-curl http://localhost:3003/api/users \
+curl http://localhost:3003/users \
   -H "Authorization: Bearer ACCESS_TOKEN"
 
 # Get user by ID (self or admin)
-curl http://localhost:3003/api/users/USER_ID \
+curl http://localhost:3003/users/USER_ID \
   -H "Authorization: Bearer ACCESS_TOKEN"
 
 # Update user (self or admin)
-curl -X PUT http://localhost:3003/api/users/USER_ID \
+curl -X PUT http://localhost:3003/users/USER_ID \
   -H "Authorization: Bearer ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name": "Jane Doe", "phone": "+1234567890"}'
@@ -142,7 +142,7 @@ curl -X PUT http://localhost:3003/api/users/USER_ID \
 
 ```bash
 # Create order (authenticated)
-curl -X POST http://localhost:3004/api/orders \
+curl -X POST http://localhost:3004/orders \
   -H "Authorization: Bearer ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -167,11 +167,11 @@ curl -X POST http://localhost:3004/api/orders \
   }'
 
 # Get user's orders (self or admin)
-curl http://localhost:3004/api/orders/user/USER_ID \
+curl http://localhost:3004/orders/user/USER_ID \
   -H "Authorization: Bearer ACCESS_TOKEN"
 
 # Update order status (admin only)
-curl -X PATCH http://localhost:3004/api/orders/ORDER_ID/status \
+curl -X PATCH http://localhost:3004/orders/ORDER_ID/status \
   -H "Authorization: Bearer ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"status": "shipped"}'
@@ -360,7 +360,7 @@ curl -X POST http://localhost:3000/auth/oauth/token \
   }'
 
 # 5. Test protected endpoint
-curl http://localhost:3001/api/products \
+curl http://localhost:3001/products \
   -H "Authorization: Bearer TOKEN_HERE"
 ```
 

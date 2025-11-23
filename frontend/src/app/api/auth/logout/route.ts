@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     // Revoke refresh token on auth server if exists
     if (refreshToken) {
       try {
-        await fetch(`${AUTH_API_URL}/api/v1/auth/oauth/revoke`, {
+        await fetch(`${AUTH_API_URL}/v1/auth/oauth/revoke`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
