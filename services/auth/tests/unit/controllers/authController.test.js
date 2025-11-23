@@ -57,9 +57,12 @@ describe('Auth Controller - User Registration', () => {
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
+          success: true,
           message: 'User registered successfully',
-          user: expect.objectContaining({
-            email: fixtures.validUser.email
+          data: expect.objectContaining({
+            user: expect.objectContaining({
+              email: fixtures.validUser.email
+            })
           })
         })
       );
@@ -77,7 +80,13 @@ describe('Auth Controller - User Registration', () => {
       // Assert
       expect(User.findOne).toHaveBeenCalledWith({ email: fixtures.validUser.email });
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ error: 'User already exists' });
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          error: 'DuplicateEmail',
+          message: 'Email already exists. Please use a different email or login.'
+        })
+      );
     });
 
     // TC-AUTH-003: User Registration - Missing Required Fields
@@ -97,7 +106,13 @@ describe('Auth Controller - User Registration', () => {
 
       // Assert
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Validation failed' });
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          error: 'ServerError',
+          message: 'Validation failed'
+        })
+      );
     });
   });
 
@@ -117,7 +132,9 @@ describe('Auth Controller - User Registration', () => {
         getOIDCUserInfo: jest.fn().mockReturnValue({
           sub: '507f1f77bcf86cd799439011',
           email: fixtures.validUser.email,
-          name: fixtures.validUser.name
+          name: fixtures.validUser.name,
+          email_verified: false,
+          roles: ['user']
         })
       };
 
@@ -522,7 +539,8 @@ describe('Auth Controller - User Registration', () => {
           sub: '507f1f77bcf86cd799439011',
           email: 'user@example.com',
           name: 'Test User',
-          email_verified: true
+          email_verified: true,
+          roles: ['user']
         })
       };
 

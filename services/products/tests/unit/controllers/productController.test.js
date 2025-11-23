@@ -30,7 +30,15 @@ describe('Product Controller - Unit Tests', () => {
         { ...fixtures.existingProduct }
       ];
 
-      Product.find.mockResolvedValue(mockProducts);
+      // Mock the query chain
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockResolvedValue(mockProducts)
+      };
+
+      Product.find.mockReturnValue(mockQuery);
+      Product.countDocuments.mockResolvedValue(mockProducts.length);
 
       // Act
       await productController.getAllProducts(req, res);
@@ -53,7 +61,14 @@ describe('Product Controller - Unit Tests', () => {
     // TC-PROD-002: Get All Products - Empty Database
     test('TC-PROD-002: Should return empty array when no products exist', async () => {
       // Arrange
-      Product.find.mockResolvedValue([]);
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockResolvedValue([])
+      };
+
+      Product.find.mockReturnValue(mockQuery);
+      Product.countDocuments.mockResolvedValue(0);
 
       // Act
       await productController.getAllProducts(req, res);
@@ -76,7 +91,13 @@ describe('Product Controller - Unit Tests', () => {
     test('TC-PROD-003: Should handle database errors', async () => {
       // Arrange
       const errorMessage = 'Database connection failed';
-      Product.find.mockRejectedValue(new Error(errorMessage));
+      const mockQuery = {
+        sort: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockRejectedValue(new Error(errorMessage))
+      };
+
+      Product.find.mockReturnValue(mockQuery);
 
       // Act
       await productController.getAllProducts(req, res);

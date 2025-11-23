@@ -374,17 +374,17 @@ describe('Order Controller - Unit Tests', () => {
       // Arrange
       const orderId = '507f1f77bcf86cd799439020';
       req.params.id = orderId;
-      req.body = { status: 'processing' };
+      req.body = { status: 2 }; // 2 = processing
 
       const oldOrder = {
         _id: orderId,
         ...fixtures.existingOrder,
-        status: 'pending'
+        status: 1 // 1 = pending
       };
 
       const updatedOrder = {
         ...oldOrder,
-        status: 'processing'
+        status: 2 // 2 = processing
       };
 
       Order.findById.mockResolvedValue(oldOrder);
@@ -397,7 +397,7 @@ describe('Order Controller - Unit Tests', () => {
       expect(Order.findById).toHaveBeenCalledWith(orderId);
       expect(Order.findByIdAndUpdate).toHaveBeenCalledWith(
         orderId,
-        { status: 'processing' },
+        { status: 2 },
         { new: true, runValidators: true }
       );
       expect(res.status).toHaveBeenCalledWith(200);
@@ -407,8 +407,8 @@ describe('Order Controller - Unit Tests', () => {
           message: 'Order status updated successfully',
           data: expect.objectContaining({
             order: updatedOrder,
-            oldStatus: 'pending',
-            newStatus: 'processing'
+            oldStatus: 1,
+            newStatus: 2
           })
         })
       );
@@ -416,8 +416,8 @@ describe('Order Controller - Unit Tests', () => {
         ORDER_EVENTS.STATUS_CHANGED,
         expect.objectContaining({
           order: updatedOrder,
-          oldStatus: 'pending',
-          newStatus: 'processing'
+          oldStatus: 1,
+          newStatus: 2
         })
       );
     });
@@ -427,17 +427,17 @@ describe('Order Controller - Unit Tests', () => {
       // Arrange
       const orderId = '507f1f77bcf86cd799439020';
       req.params.id = orderId;
-      req.body = { status: 'delivered' };
+      req.body = { status: 4 }; // 4 = delivered
 
       const oldOrder = {
         _id: orderId,
         ...fixtures.existingOrder,
-        status: 'shipped'
+        status: 3 // 3 = shipped
       };
 
       const updatedOrder = {
         ...oldOrder,
-        status: 'delivered'
+        status: 4 // 4 = delivered
       };
 
       Order.findById.mockResolvedValue(oldOrder);
@@ -456,17 +456,17 @@ describe('Order Controller - Unit Tests', () => {
       // Arrange
       const orderId = '507f1f77bcf86cd799439020';
       req.params.id = orderId;
-      req.body = { status: 'cancelled' };
+      req.body = { status: 5 }; // 5 = cancelled
 
       const oldOrder = {
         _id: orderId,
         ...fixtures.existingOrder,
-        status: 'pending'
+        status: 1 // 1 = pending
       };
 
       const updatedOrder = {
         ...oldOrder,
-        status: 'cancelled'
+        status: 5 // 5 = cancelled
       };
 
       Order.findById.mockResolvedValue(oldOrder);
@@ -485,17 +485,17 @@ describe('Order Controller - Unit Tests', () => {
       // Arrange
       const orderId = '507f1f77bcf86cd799439020';
       req.params.id = orderId;
-      req.body = { status: 'shipped' };
+      req.body = { status: 3 }; // 3 = shipped
 
       const oldOrder = {
         _id: orderId,
         ...fixtures.existingOrder,
-        status: 'processing'
+        status: 2 // 2 = processing
       };
 
       const updatedOrder = {
         ...oldOrder,
-        status: 'shipped'
+        status: 3 // 3 = shipped
       };
 
       Order.findById.mockResolvedValue(oldOrder);
@@ -507,11 +507,13 @@ describe('Order Controller - Unit Tests', () => {
       // Assert
       expect(orderEvents.emit).toHaveBeenCalledWith(
         ORDER_EVENTS.STATUS_CHANGED,
-        {
+        expect.objectContaining({
           order: updatedOrder,
-          oldStatus: 'processing',
-          newStatus: 'shipped'
-        }
+          oldStatus: 2,
+          newStatus: 3,
+          oldStatusLabel: expect.any(String),
+          newStatusLabel: expect.any(String)
+        })
       );
     });
 
