@@ -220,7 +220,7 @@ exports.authorize = async (req, res) => {
  */
 exports.token = async (req, res) => {
   try {
-    const { grant_type, code, refresh_token, client_id, client_secret, redirect_uri } = req.body;
+    const { grant_type, client_id, client_secret } = req.body;
 
     // Validate client credentials
     const client = await Client.findOne({ client_id, isActive: true });

@@ -195,6 +195,11 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.initialized = true;
         state.error = null;
+
+        // Dispatch custom event to notify socket provider of token change
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('wsTokenChanged'));
+        }
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
@@ -247,12 +252,22 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.loading = false;
         state.error = null;
+
+        // Dispatch custom event to notify socket provider of token removal
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('wsTokenChanged'));
+        }
       })
       .addCase(logout.rejected, (state) => {
         // Clear state even if logout fails on server
         state.user = null;
         state.isAuthenticated = false;
         state.loading = false;
+
+        // Dispatch custom event to notify socket provider of token removal
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('wsTokenChanged'));
+        }
       });
 
     // Refresh Session

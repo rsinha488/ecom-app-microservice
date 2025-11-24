@@ -14,7 +14,7 @@ export function middleware(request: NextRequest) {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https: blob:",
     "font-src 'self' data:",
-    "connect-src 'self' http://localhost:*", // API connections
+    "connect-src 'self' http://localhost:* ws://localhost:* wss://localhost:*", // API connections and WebSocket
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",

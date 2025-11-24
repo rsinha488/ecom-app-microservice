@@ -30,7 +30,7 @@ router.post('/login',
   authController.login
 );
 
-// OAuth2 Token endpoint
+// OAuth2 Token endpoint Refresh token
 router.post('/oauth/token', authController.token);
 
 // OpenID Connect UserInfo endpoint

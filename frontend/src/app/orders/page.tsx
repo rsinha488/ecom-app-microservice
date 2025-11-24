@@ -18,7 +18,6 @@ import {
 } from 'react-icons/fi';
 import { useOrderSocket } from '@/hooks/useOrderSocket';
 import { useDebounce } from '@/hooks/useDebounce';
-import { getAccessToken } from '@/lib/cookies';
 import OrderStatusBadge from '@/components/orders/OrderStatusBadge';
 import { getPaymentMethodDisplay } from '@/constants/paymentMethod';
 import { getPaymentStatusDisplay, getPaymentStatusColor, PaymentStatusCode } from '@/constants/paymentStatus';
@@ -41,7 +40,6 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'amount'>('date');
@@ -52,8 +50,8 @@ export default function OrdersPage() {
   // Debounce search query to avoid excessive API calls
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
-  // Initialize WebSocket connection
-  const { isConnected, lastEvent } = useOrderSocket(accessToken);
+  // Use global WebSocket connection from context
+  const {  lastEvent } = useOrderSocket();
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -100,12 +98,6 @@ export default function OrdersPage() {
     }
   }, [selectedStatus, debouncedSearchQuery, sortBy, sortOrder]);
 
-  useEffect(() => {
-    // Get access token from cookie
-    const token = getAccessToken();
-    setAccessToken(token);
-  }, []);
-
   // Fetch orders when component mounts or filters change
   useEffect(() => {
     fetchOrders();
@@ -132,7 +124,7 @@ export default function OrdersPage() {
         throw new Error(error.error || 'Failed to cancel order');
       }
 
-      toast.success(`Order #${orderNumber} has been cancelled successfully`);
+      // toast.success(`Order #${orderNumber} has been cancelled successfully`);
 
       // Refresh orders list to show updated status
       await fetchOrders();
@@ -169,7 +161,8 @@ export default function OrdersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12">
+      // <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 ">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/70 backdrop-blur-sm">  
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-600"></div>
@@ -345,7 +338,8 @@ export default function OrdersPage() {
               <div key={order._id} className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow overflow-hidden border border-gray-200">
                 {/* Order Header */}
                 <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200">
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                  {/* <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"> */}
+                  <div className="flex flex-col md:flex-row md:flex-wrap md:items-center md:justify-between lg:flex-row lg:items-center lg:justify-between gap-4">
                     {/* Left section - Order Number */}
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center justify-center w-12 h-12 bg-indigo-600 rounded-xl flex-shrink-0">

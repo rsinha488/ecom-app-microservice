@@ -267,6 +267,7 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="space-y-3">
+                  {/* //Additional payment methods can be enabled in future  when payment gateway integrated
                   <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
                     <input
                       type="radio"
@@ -304,7 +305,7 @@ export default function CheckoutPage() {
                       disabled
                     />
                     <span className="ml-3 text-gray-900 font-medium">PayPal</span>
-                  </label>
+                  </label> */}
 
                   <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
                     <input
@@ -322,13 +323,13 @@ export default function CheckoutPage() {
                 <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-sm text-blue-800">
                     <FiCheck className="inline h-4 w-4 mr-1" />
-                    This is a demo checkout. No actual payment will be processed.
+                    Payment Gateway integration coming soon! For now, select Cash on Delivery to complete your order.
                   </p>
                 </div>
               </div>
 
               {/* Order Notes (Optional) */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
+              {/* <div className="bg-white rounded-lg shadow-sm p-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Order Notes (Optional)</h2>
                 <textarea
                   name="notes"
@@ -338,7 +339,7 @@ export default function CheckoutPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   placeholder="Any special instructions for your order?"
                 />
-              </div>
+              </div> */}
 
               {/* Submit Button */}
               <button

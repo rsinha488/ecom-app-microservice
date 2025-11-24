@@ -9,7 +9,7 @@ const initializeSocket = (server) => {
   io = new Server(server, {
     cors: {
       origin: process.env.FRONTEND_URL || 'http://localhost:3006',
-      methods: ['GET', 'POST'],
+      methods: ['GET', 'POST', 'PUT', 'PATCH'],
       credentials: true,
     },
     path: '/socket.io/',

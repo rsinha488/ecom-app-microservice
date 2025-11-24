@@ -69,6 +69,16 @@ export async function POST(request: NextRequest) {
       path: '/',
     });
 
+    // WebSocket token (not HTTP-only, accessible for WebSocket connections)
+    // This is a separate cookie to allow WebSocket authentication
+    cookieStore.set('wsToken', accessToken, {
+      httpOnly: false, // Must be accessible by JavaScript for WebSocket
+      secure: isProduction,
+      sameSite: 'lax',
+      maxAge: 60 * 15, // Same as access token: 15 minutes
+      path: '/',
+    });
+
     // Return user data in standardized format (without tokens for security)
     return NextResponse.json({
       success: true,

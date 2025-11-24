@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
     cookieStore.delete('accessToken');
     cookieStore.delete('refreshToken');
     cookieStore.delete('user');
+    cookieStore.delete('wsToken'); // Clear WebSocket token
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
