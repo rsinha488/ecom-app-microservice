@@ -91,4 +91,11 @@ productSchema.index({ name: 'text', description: 'text', tags: 'text' }, {
 // Sparse index for SKU
 productSchema.index({ sku: 1 }, { unique: true, sparse: true });
 
+// Removing __v field from JSON output
+productSchema.set("toJSON", {
+  transform: function (doc, ret) {
+    delete ret.__v;
+    return ret;
+  }
+});
 module.exports = mongoose.model('Product', productSchema);

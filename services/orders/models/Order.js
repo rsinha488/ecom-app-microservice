@@ -120,4 +120,11 @@ orderSchema.index({ 'items.productId': 1 });
 // Index for analytics and reporting
 orderSchema.index({ createdAt: -1, status: 1, totalAmount: 1 });
 
+// Removing __v field from JSON output
+orderSchema.set("toJSON", {
+  transform: function (doc, ret) {
+    delete ret.__v;
+    return ret;
+  }
+});
 module.exports = mongoose.model('Order', orderSchema);
