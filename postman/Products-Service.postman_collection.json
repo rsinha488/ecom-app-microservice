@@ -74,7 +74,7 @@
 						"url": {
 							"raw": "{{base_url}}/v1/products?page=1&limit=20",
 							"host": ["{{base_url}}"],
-							"path": ["api", "v1", "products"],
+							"path": ["v1", "products"],
 							"query": [
 								{
 									"key": "page",
@@ -133,7 +133,7 @@
 						"url": {
 							"raw": "{{base_url}}/v1/products/search?q=laptop",
 							"host": ["{{base_url}}"],
-							"path": ["api", "v1", "products", "search"],
+							"path": ["v1", "products", "search"],
 							"query": [
 								{
 									"key": "q",
@@ -167,7 +167,7 @@
 						"url": {
 							"raw": "{{base_url}}/v1/products/{{product_id}}",
 							"host": ["{{base_url}}"],
-							"path": ["api", "v1", "products", "{{product_id}}"]
+							"path": ["v1", "products", "{{product_id}}"]
 						},
 						"description": "Get a single product by ID"
 					},
@@ -223,7 +223,7 @@
 						"url": {
 							"raw": "{{base_url}}/v1/products",
 							"host": ["{{base_url}}"],
-							"path": ["api", "v1", "products"]
+							"path": ["v1", "products"]
 						},
 						"description": "Create a new product (Admin only)"
 					},
@@ -256,7 +256,7 @@
 						"url": {
 							"raw": "{{base_url}}/v1/products/{{product_id}}",
 							"host": ["{{base_url}}"],
-							"path": ["api", "v1", "products", "{{product_id}}"]
+							"path": ["v1", "products", "{{product_id}}"]
 						},
 						"description": "Update a product (Admin only)"
 					},
@@ -280,7 +280,7 @@
 						"url": {
 							"raw": "{{base_url}}/v1/products/{{product_id}}",
 							"host": ["{{base_url}}"],
-							"path": ["api", "v1", "products", "{{product_id}}"]
+							"path": ["v1", "products", "{{product_id}}"]
 						},
 						"description": "Delete a product (Admin only)"
 					},
@@ -309,7 +309,7 @@
 						"url": {
 							"raw": "{{base_url}}/v1/products/{{product_id}}/reserve",
 							"host": ["{{base_url}}"],
-							"path": ["api", "v1", "products", "{{product_id}}", "reserve"]
+							"path": ["v1", "products", "{{product_id}}", "reserve"]
 						},
 						"description": "Reserve stock for a product (inter-service communication)"
 					},
@@ -332,7 +332,7 @@
 						"url": {
 							"raw": "{{base_url}}/v1/products/{{product_id}}/release",
 							"host": ["{{base_url}}"],
-							"path": ["api", "v1", "products", "{{product_id}}", "release"]
+							"path": ["v1", "products", "{{product_id}}", "release"]
 						},
 						"description": "Release reserved stock (inter-service communication)"
 					},

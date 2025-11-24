@@ -47,9 +47,26 @@ export async function GET(request: NextRequest) {
 
     console.log('[Orders API] User ID:', userId);
 
-    // Fetch orders from orders service using user-specific endpoint
-    console.log('[Orders API] Fetching from:', `${ORDERS_API_URL}/v1/orders/user/${userId}`);
-    const response = await fetch(`${ORDERS_API_URL}/v1/orders/user/${userId}`, {
+    // Extract query parameters from the request
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status');
+    const search = searchParams.get('search');
+    const sortBy = searchParams.get('sortBy');
+    const sortOrder = searchParams.get('sortOrder');
+
+    // Build query string for backend API
+    const queryParams = new URLSearchParams();
+    if (status) queryParams.append('status', status);
+    if (search) queryParams.append('search', search);
+    if (sortBy) queryParams.append('sortBy', sortBy);
+    if (sortOrder) queryParams.append('sortOrder', sortOrder);
+
+    const queryString = queryParams.toString();
+    const apiUrl = `${ORDERS_API_URL}/v1/orders/user/${userId}${queryString ? `?${queryString}` : ''}`;
+
+    // Fetch orders from orders service using user-specific endpoint with filters
+    console.log('[Orders API] Fetching from:', apiUrl);
+    const response = await fetch(apiUrl, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
       },

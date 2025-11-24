@@ -23,6 +23,7 @@ app.use(compression());
 if (isProduction) {
   app.set('trust proxy', 1);
 }
+app.set('trust proxy', true);
 
 // Rate Limiting
 const limiter = rateLimit({

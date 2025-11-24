@@ -51,24 +51,25 @@ export default function OrdersPage() {
   // Initialize WebSocket connection
   const { isConnected, lastEvent } = useOrderSocket(accessToken);
 
-  useEffect(() => {
-    // Get access token from cookie
-    const token = getAccessToken();
-    setAccessToken(token);
-    fetchOrders();
-  }, []);
-
-  // Update orders when socket events occur
-  useEffect(() => {
-    if (lastEvent) {
-      fetchOrders(); // Refresh orders list when an event occurs
-    }
-  }, [lastEvent]);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/orders');
+
+      // Build query parameters for API
+      const queryParams = new URLSearchParams();
+      if (selectedStatus !== 'all') {
+        queryParams.append('status', selectedStatus);
+      }
+      if (searchQuery.trim()) {
+        queryParams.append('search', searchQuery.trim());
+      }
+      queryParams.append('sortBy', sortBy);
+      queryParams.append('sortOrder', sortOrder);
+
+      const queryString = queryParams.toString();
+      const url = `/api/orders${queryString ? `?${queryString}` : ''}`;
+
+      const response = await fetch(url);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -86,7 +87,25 @@ export default function OrdersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedStatus, searchQuery, sortBy, sortOrder]);
+
+  useEffect(() => {
+    // Get access token from cookie
+    const token = getAccessToken();
+    setAccessToken(token);
+  }, []);
+
+  // Fetch orders when component mounts or filters change
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
+  // Update orders when socket events occur
+  useEffect(() => {
+    if (lastEvent) {
+      fetchOrders(); // Refresh orders list when an event occurs
+    }
+  }, [lastEvent, fetchOrders]);
 
   const handleCancelOrder = async (orderId: string, orderNumber: string) => {
     // Use Next.js API route for cancellation
@@ -119,40 +138,10 @@ export default function OrdersPage() {
     return status === 1 || status === 2 || status === 3; // Pending, Processing, or Shipped
   };
 
-  // Filter and sort orders
+  // Orders are now filtered and sorted by the API
   const filteredAndSortedOrders = useMemo(() => {
-    let filtered = orders.filter(order => order != null); // Remove null/undefined orders
-
-    // Filter by status
-    if (selectedStatus !== 'all') {
-      const statusNumber = parseInt(selectedStatus, 10);
-      filtered = filtered.filter(order => order?.status === statusNumber);
-    }
-
-    // Filter by search query (order number or product name)
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(order =>
-        order?.orderNumber?.toLowerCase().includes(query) ||
-        order?.items?.some(item => item?.productName?.toLowerCase().includes(query))
-      );
-    }
-
-    // Sort orders
-    const sorted = [...filtered].sort((a, b) => {
-      if (sortBy === 'date') {
-        const dateA = new Date(a?.createdAt || 0).getTime();
-        const dateB = new Date(b?.createdAt || 0).getTime();
-        return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
-      } else {
-        return sortOrder === 'desc'
-          ? (b?.totalAmount || 0) - (a?.totalAmount || 0)
-          : (a?.totalAmount || 0) - (b?.totalAmount || 0);
-      }
-    });
-
-    return sorted;
-  }, [orders, selectedStatus, searchQuery, sortBy, sortOrder]);
+    return orders.filter(order => order != null); // Remove null/undefined orders
+  }, [orders]);
 
   // Stats calculation
   const stats = useMemo(() => {

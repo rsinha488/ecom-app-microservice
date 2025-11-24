@@ -267,53 +267,53 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="space-y-3">
-                  <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                  <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
                     <input
                       type="radio"
                       name="paymentMethod"
                       value={PaymentMethodCode.CREDIT_CARD}
                       checked={formData.paymentMethod === PaymentMethodCode.CREDIT_CARD}
                       onChange={handleInputChange}
-                      className="h-5 w-5 sm:h-4 sm:w-4 text-indigo-600 focus:ring-indigo-500"
+                      className="h-5 w-5 sm:h-4 sm:w-4 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       disabled
                     />
                     <span className="ml-3 text-gray-900 font-medium">Credit Card</span>
                   </label>
 
-                  <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                  <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
                     <input
                       type="radio"
                       name="paymentMethod"
                       value={PaymentMethodCode.DEBIT_CARD}
                       checked={formData.paymentMethod === PaymentMethodCode.DEBIT_CARD}
                       onChange={handleInputChange}
-                      className="h-5 w-5 sm:h-4 sm:w-4 text-indigo-600 focus:ring-indigo-500"
+                      className="h-5 w-5 sm:h-4 sm:w-4 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       disabled
                     />
                     <span className="ml-3 text-gray-900 font-medium">Debit Card</span>
                   </label>
 
-                  <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                  <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
                     <input
                       type="radio"
                       name="paymentMethod"
                       value={PaymentMethodCode.PAYPAL}
                       checked={formData.paymentMethod === PaymentMethodCode.PAYPAL}
                       onChange={handleInputChange}
-                      className="h-5 w-5 sm:h-4 sm:w-4 text-indigo-600 focus:ring-indigo-500"
+                      className="h-5 w-5 sm:h-4 sm:w-4 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       disabled
                     />
                     <span className="ml-3 text-gray-900 font-medium">PayPal</span>
                   </label>
 
-                  <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                  <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
                     <input
                       type="radio"
                       name="paymentMethod"
                       value={PaymentMethodCode.CASH_ON_DELIVERY}
                       checked={formData.paymentMethod === PaymentMethodCode.CASH_ON_DELIVERY}
                       onChange={handleInputChange}
-                      className="h-5 w-5 sm:h-4 sm:w-4 text-indigo-600 focus:ring-indigo-500"
+                      className="h-5 w-5 sm:h-4 sm:w-4 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                     <span className="ml-3 text-gray-900 font-medium">Cash on Delivery</span>
                   </label>

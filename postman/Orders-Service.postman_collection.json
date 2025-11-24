@@ -87,7 +87,7 @@
 						"url": {
 							"raw": "{{base_url}}/v1/orders",
 							"host": ["{{base_url}}"],
-							"path": ["api", "v1", "orders"]
+							"path": ["v1", "orders"]
 						},
 						"description": "Create a new order. Payment Method: 1=Credit Card, 2=Debit Card, 3=PayPal, 4=Cash on Delivery. Payment Status: 1=Paid, 2=Pending, 3=Failed, 4=Refunded"
 					},
@@ -111,7 +111,7 @@
 						"url": {
 							"raw": "{{base_url}}/v1/orders/{{order_id}}",
 							"host": ["{{base_url}}"],
-							"path": ["api", "v1", "orders", "{{order_id}}"]
+							"path": ["v1", "orders", "{{order_id}}"]
 						},
 						"description": "Get a specific order by ID (user can view own orders, admin can view all)"
 					},
@@ -133,29 +133,34 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/v1/orders/user/{{user_id}}?page=1&limit=10",
+							"raw": "{{base_url}}/v1/orders/user/{{user_id}}?status=all&sortBy=date&sortOrder=desc",
 							"host": ["{{base_url}}"],
-							"path": ["api", "v1", "orders", "user", "{{user_id}}"],
+							"path": ["v1", "orders", "user", "{{user_id}}"],
 							"query": [
 								{
-									"key": "page",
-									"value": "1",
-									"description": "Page number"
-								},
-								{
-									"key": "limit",
-									"value": "10",
-									"description": "Items per page"
-								},
-								{
 									"key": "status",
-									"value": "2",
-									"description": "Filter by status: 1=Pending, 2=Processing, 3=Shipped, 4=Delivered, 5=Cancelled",
+									"value": "all",
+									"description": "Filter by status: all, 1=Pending, 2=Processing, 3=Shipped, 4=Delivered, 5=Cancelled"
+								},
+								{
+									"key": "search",
+									"value": "",
+									"description": "Search by order number or product name",
 									"disabled": true
+								},
+								{
+									"key": "sortBy",
+									"value": "date",
+									"description": "Sort by: date or amount"
+								},
+								{
+									"key": "sortOrder",
+									"value": "desc",
+									"description": "Sort order: asc or desc"
 								}
 							]
 						},
-						"description": "Get all orders for a specific user (user can view own orders, admin can view any user's orders)"
+						"description": "Get all orders for a specific user with optional filtering, search, and sorting (user can view own orders, admin can view any user's orders)"
 					},
 					"response": []
 				},
@@ -186,7 +191,7 @@
 						"url": {
 							"raw": "{{base_url}}/v1/orders/{{order_id}}",
 							"host": ["{{base_url}}"],
-							"path": ["api", "v1", "orders", "{{order_id}}"]
+							"path": ["v1", "orders", "{{order_id}}"]
 						},
 						"description": "Update order details (shipping address, etc.)"
 					},
@@ -210,7 +215,7 @@
 						"url": {
 							"raw": "{{base_url}}/v1/orders/{{order_id}}/cancel",
 							"host": ["{{base_url}}"],
-							"path": ["api", "v1", "orders", "{{order_id}}", "cancel"]
+							"path": ["v1", "orders", "{{order_id}}", "cancel"]
 						},
 						"description": "Cancel an order (user can cancel own order if not delivered, admin can cancel any order)"
 					},
@@ -238,45 +243,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/v1/orders?page=1&limit=20",
+							"raw": "{{base_url}}/v1/orders",
 							"host": ["{{base_url}}"],
-							"path": ["api", "v1", "orders"],
-							"query": [
-								{
-									"key": "page",
-									"value": "1",
-									"description": "Page number"
-								},
-								{
-									"key": "limit",
-									"value": "20",
-									"description": "Items per page"
-								},
-								{
-									"key": "status",
-									"value": "1",
-									"description": "Filter by status: 1=Pending, 2=Processing, 3=Shipped, 4=Delivered, 5=Cancelled",
-									"disabled": true
-								},
-								{
-									"key": "userId",
-									"value": "user_id_here",
-									"description": "Filter by user ID",
-									"disabled": true
-								},
-								{
-									"key": "startDate",
-									"value": "2024-01-01",
-									"description": "Filter by start date (YYYY-MM-DD)",
-									"disabled": true
-								},
-								{
-									"key": "endDate",
-									"value": "2024-12-31",
-									"description": "Filter by end date (YYYY-MM-DD)",
-									"disabled": true
-								}
-							]
+							"path": ["v1", "orders"]
 						},
 						"description": "Get all orders in the system (Admin only)"
 					},
@@ -309,7 +278,7 @@
 						"url": {
 							"raw": "{{base_url}}/v1/orders/{{order_id}}/status",
 							"host": ["{{base_url}}"],
-							"path": ["api", "v1", "orders", "{{order_id}}", "status"]
+							"path": ["v1", "orders", "{{order_id}}", "status"]
 						},
 						"description": "Update order status (Admin only). Status: 1=Pending, 2=Processing, 3=Shipped, 4=Delivered, 5=Cancelled. Optionally include trackingNumber when status is Shipped."
 					},
@@ -333,7 +302,7 @@
 						"url": {
 							"raw": "{{base_url}}/v1/orders/{{order_id}}",
 							"host": ["{{base_url}}"],
-							"path": ["api", "v1", "orders", "{{order_id}}"]
+							"path": ["v1", "orders", "{{order_id}}"]
 						},
 						"description": "Delete an order (Admin only)"
 					},

@@ -157,41 +157,93 @@ exports.getOrderById = async (req, res) => {
 /**
  * Get orders by user ID
  *
- * Retrieves all orders belonging to a specific user.
+ * Retrieves all orders belonging to a specific user with optional filtering and sorting.
+ * Supports query parameters for status filtering, search, and sorting.
  * Returns empty array if no orders found for the user.
  *
  * @route GET /api/v1/orders/user/:userId
  * @access Private (user can view their own orders, admin can view all)
  * @param {Object} req - Express request object
  * @param {string} req.params.userId - User ID (MongoDB ObjectID)
+ * @param {Object} req.query - Query parameters
+ * @param {string} req.query.status - Filter by order status (1-5)
+ * @param {string} req.query.search - Search by order number or product name
+ * @param {string} req.query.sortBy - Sort field: 'date' or 'amount' (default: 'date')
+ * @param {string} req.query.sortOrder - Sort order: 'asc' or 'desc' (default: 'desc')
  * @param {Object} res - Express response object
  * @returns {Object} 200 - Array of user's orders
  * @returns {Object} 400 - Invalid user ID format
  * @returns {Object} 500 - Server error
  *
  * @example
- * GET /api/v1/orders/user/507f1f77bcf86cd799439011
+ * GET /api/v1/orders/user/507f1f77bcf86cd799439011?status=2&sortBy=date&sortOrder=desc
  * Response: {
  *   "success": true,
  *   "message": "User orders retrieved successfully",
  *   "data": {
  *     "orders": [...],
  *     "count": 5,
- *     "userId": "507f1f77bcf86cd799439011"
+ *     "userId": "507f1f77bcf86cd799439011",
+ *     "filters": {
+ *       "status": 2,
+ *       "search": null,
+ *       "sortBy": "date",
+ *       "sortOrder": "desc"
+ *     }
  *   }
  * }
  */
 exports.getOrdersByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
+    const { status, search, sortBy = 'date', sortOrder = 'desc' } = req.query;
 
-    // Find all orders for this user
-    const orders = await Order.find({ userId });
+    // Build query filter
+    const filter = { userId };
+
+    // Filter by status if provided
+    if (status && status !== 'all') {
+      const statusNumber = parseInt(status, 10);
+      if (!isNaN(statusNumber) && statusNumber >= 1 && statusNumber <= 5) {
+        filter.status = statusNumber;
+      }
+    }
+
+    // Filter by search query (order number or product name)
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(search.trim(), 'i');
+      filter.$or = [
+        { orderNumber: searchRegex },
+        { 'items.productName': searchRegex }
+      ];
+    }
+
+    // Build sort options
+    let sort = {};
+    if (sortBy === 'amount') {
+      sort.totalAmount = sortOrder === 'asc' ? 1 : -1;
+    } else {
+      // Default to sorting by creation date
+      sort.createdAt = sortOrder === 'asc' ? 1 : -1;
+    }
+
+    // Find orders with filters and sorting applied
+    const orders = await Order.find(filter).sort(sort);
 
     // Return success response with user's orders (even if empty)
     res.status(200).json(
       ErrorResponse.success(
-        { orders, count: orders.length, userId },
+        {
+          orders,
+          count: orders.length,
+          userId,
+          filters: {
+            status: status || null,
+            search: search || null,
+            sortBy,
+            sortOrder
+          }
+        },
         'User orders retrieved successfully'
       )
     );
@@ -591,6 +643,7 @@ exports.updateOrderStatus = async (req, res) => {
 
     // Emit status changed event for real-time notifications (WebSocket)
     // This triggers WebSocket updates to all connected clients
+    console.log('[OrderController] Emitting ORDER_EVENTS.STATUS_CHANGED event', statusChangeData);
     orderEvents.emit(ORDER_EVENTS.STATUS_CHANGED, statusChangeData);
 
     // Publish to Kafka for inter-service communication (async, non-blocking)
