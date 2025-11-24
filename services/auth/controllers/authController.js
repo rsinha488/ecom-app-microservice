@@ -85,13 +85,18 @@ exports.login = async (req, res) => {
       const refreshTokenString = JWTManager.generateRefreshToken();
       const idToken = JWTManager.generateIDToken(user);
 
-      // Store refresh token
+      // Create a new token family for this login session
+      const familyId = JWTManager.generateRefreshToken(); // Use UUID for family ID
+
+      // Store refresh token with family tracking
       const refreshToken = new RefreshToken({
         token: refreshTokenString,
         client_id: process.env.DEFAULT_CLIENT_ID || 'ecommerce-client',
         user_id: user._id,
         scope: defaultScope,
-        expires_at: OAuth2Utils.calculateExpiry(process.env.REFRESH_TOKEN_EXPIRY || '7d')
+        expires_at: OAuth2Utils.calculateExpiry(process.env.REFRESH_TOKEN_EXPIRY || '7d'),
+        family_id: familyId,
+        used: false
       });
       await refreshToken.save();
 
@@ -294,12 +299,17 @@ async function handleAuthorizationCodeGrant(req, res, client) {
   const accessToken = JWTManager.generateAccessToken(user, authCode.scope);
   const refreshTokenString = JWTManager.generateRefreshToken();
 
+  // Create a new token family for this authorization
+  const familyId = JWTManager.generateRefreshToken();
+
   const refreshToken = new RefreshToken({
     token: refreshTokenString,
     client_id: client.client_id,
     user_id: user._id,
     scope: authCode.scope,
-    expires_at: OAuth2Utils.calculateExpiry(process.env.REFRESH_TOKEN_EXPIRY || '7d')
+    expires_at: OAuth2Utils.calculateExpiry(process.env.REFRESH_TOKEN_EXPIRY || '7d'),
+    family_id: familyId,
+    used: false
   });
   await refreshToken.save();
 
@@ -319,7 +329,7 @@ async function handleAuthorizationCodeGrant(req, res, client) {
 }
 
 /**
- * Handle refresh token grant
+ * Handle refresh token grant with rotation and reuse detection
  */
 async function handleRefreshTokenGrant(req, res, client) {
   const { refresh_token } = req.body;
@@ -344,14 +354,53 @@ async function handleRefreshTokenGrant(req, res, client) {
     });
   }
 
+  // CRITICAL SECURITY: Detect token reuse attack
+  // If a token has already been used, it means someone is trying to reuse an old token
+  // This is a sign of token theft - revoke the entire token family
+  if (tokenDoc.used) {
+    console.warn(`[SECURITY] Token reuse detected! Token: ${refresh_token.substring(0, 8)}..., Family: ${tokenDoc.family_id.substring(0, 8)}..., User: ${tokenDoc.user_id._id}`);
+
+    // Revoke all tokens in this family to prevent further abuse
+    await RefreshToken.updateMany(
+      { family_id: tokenDoc.family_id },
+      { $set: { revoked: true } }
+    );
+
+    return res.status(400).json({
+      error: 'invalid_grant',
+      error_description: 'Token reuse detected. All tokens in this family have been revoked for security.'
+    });
+  }
+
   const user = tokenDoc.user_id;
 
+  // Generate new tokens
   const accessToken = JWTManager.generateAccessToken(user, tokenDoc.scope);
+  const newRefreshTokenString = JWTManager.generateRefreshToken();
+
+  // Mark the old token as used
+  tokenDoc.used = true;
+  tokenDoc.used_at = new Date();
+  tokenDoc.replaced_by = newRefreshTokenString;
+  await tokenDoc.save();
+
+  // Create new refresh token in the same family
+  const newRefreshToken = new RefreshToken({
+    token: newRefreshTokenString,
+    client_id: client.client_id,
+    user_id: user._id,
+    scope: tokenDoc.scope,
+    expires_at: OAuth2Utils.calculateExpiry(process.env.REFRESH_TOKEN_EXPIRY || '7d'),
+    family_id: tokenDoc.family_id, // Same family as the old token
+    used: false
+  });
+  await newRefreshToken.save();
 
   const response = {
     access_token: accessToken,
     token_type: 'Bearer',
     expires_in: 900,
+    refresh_token: newRefreshTokenString, // Return new refresh token
     scope: tokenDoc.scope.join(' ')
   };
 

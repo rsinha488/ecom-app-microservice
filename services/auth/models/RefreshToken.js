@@ -26,6 +26,24 @@ const refreshTokenSchema = new mongoose.Schema({
   revoked: {
     type: Boolean,
     default: false
+  },
+  // Token rotation fields
+  family_id: {
+    type: String,
+    required: true,
+    index: true
+  },
+  replaced_by: {
+    type: String,
+    default: null
+  },
+  used: {
+    type: Boolean,
+    default: false
+  },
+  used_at: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true
