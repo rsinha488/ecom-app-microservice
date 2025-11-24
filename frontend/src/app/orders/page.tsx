@@ -17,6 +17,7 @@ import {
   FiRefreshCw
 } from 'react-icons/fi';
 import { useOrderSocket } from '@/hooks/useOrderSocket';
+import { useDebounce } from '@/hooks/useDebounce';
 import { getAccessToken } from '@/lib/cookies';
 import OrderStatusBadge from '@/components/orders/OrderStatusBadge';
 import { getPaymentMethodDisplay } from '@/constants/paymentMethod';
@@ -48,6 +49,9 @@ export default function OrdersPage() {
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
   const [orderToCancel, setOrderToCancel] = useState<{ id: string; number: string } | null>(null);
 
+  // Debounce search query to avoid excessive API calls
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
   // Initialize WebSocket connection
   const { isConnected, lastEvent } = useOrderSocket(accessToken);
 
@@ -55,16 +59,20 @@ export default function OrdersPage() {
     try {
       setLoading(true);
 
-      // Build query parameters for API
+      // Use Next.js API route which handles authentication via HTTP-only cookies
       const queryParams = new URLSearchParams();
-      if (selectedStatus !== 'all') {
+      if (selectedStatus && selectedStatus !== 'all') {
         queryParams.append('status', selectedStatus);
       }
-      if (searchQuery.trim()) {
-        queryParams.append('search', searchQuery.trim());
+      if (debouncedSearchQuery) {
+        queryParams.append('search', debouncedSearchQuery);
       }
-      queryParams.append('sortBy', sortBy);
-      queryParams.append('sortOrder', sortOrder);
+      if (sortBy) {
+        queryParams.append('sortBy', sortBy);
+      }
+      if (sortOrder) {
+        queryParams.append('sortOrder', sortOrder);
+      }
 
       const queryString = queryParams.toString();
       const url = `/api/orders${queryString ? `?${queryString}` : ''}`;
@@ -72,22 +80,25 @@ export default function OrdersPage() {
       const response = await fetch(url);
 
       if (!response.ok) {
-        const errorData = await response.json();
-        if (response.status === 401) {
-          throw new Error('Please log in to view your orders');
-        }
-        throw new Error(errorData.error || 'Failed to fetch orders');
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch orders');
       }
 
       const data = await response.json();
-      setOrders(data.data?.orders || data.orders || []);
+      // Response from API route: { success, data: { orders }, message }
+      setOrders(data.data?.orders || []);
     } catch (err: any) {
       console.error('Orders fetch error:', err);
-      setError(err.message);
+      // Handle auth errors gracefully
+      if (err.message?.includes('authenticated') || err.message?.includes('log in')) {
+        setError('Please log in to view your orders');
+      } else {
+        setError(err.message || 'Failed to fetch orders');
+      }
     } finally {
       setLoading(false);
     }
-  }, [selectedStatus, searchQuery, sortBy, sortOrder]);
+  }, [selectedStatus, debouncedSearchQuery, sortBy, sortOrder]);
 
   useEffect(() => {
     // Get access token from cookie
@@ -108,20 +119,19 @@ export default function OrdersPage() {
   }, [lastEvent, fetchOrders]);
 
   const handleCancelOrder = async (orderId: string, orderNumber: string) => {
-    // Use Next.js API route for cancellation
     try {
       setCancellingOrderId(orderId);
 
+      // Use Next.js API route which handles authentication via HTTP-only cookies
       const response = await fetch(`/api/orders/${orderId}/cancel`, {
         method: 'PATCH',
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to cancel order');
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to cancel order');
       }
 
-      const data = await response.json();
       toast.success(`Order #${orderNumber} has been cancelled successfully`);
 
       // Refresh orders list to show updated status
@@ -143,19 +153,7 @@ export default function OrdersPage() {
     return orders.filter(order => order != null); // Remove null/undefined orders
   }, [orders]);
 
-  // Stats calculation
-  const stats = useMemo(() => {
-    const validOrders = orders.filter(o => o != null);
-    return {
-      total: validOrders.length,
-      pending: validOrders.filter(o => o?.status === 1).length,
-      processing: validOrders.filter(o => o?.status === 2).length,
-      shipped: validOrders.filter(o => o?.status === 3).length,
-      delivered: validOrders.filter(o => o?.status === 4).length,
-      cancelled: validOrders.filter(o => o?.status === 5).length,
-      totalSpent: validOrders.reduce((sum, order) => sum + (order?.totalAmount || 0), 0),
-    };
-  }, [orders]);
+
 
   const handleStatusFilter = useCallback((status: string) => {
     setSelectedStatus(status);
@@ -214,36 +212,36 @@ export default function OrdersPage() {
     );
   }
 
-  if (orders.length === 0) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-            <div>
-              <h1 className="text-3xl font-extrabold text-gray-900 mb-2">My Orders</h1>
-              <p className="text-gray-600">Track and manage your order history</p>
-            </div>
+  // if (orders.length === 0) {
+  //   return (
+  //     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12">
+  //       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  //         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+  //           <div>
+  //             <h1 className="text-3xl font-extrabold text-gray-900 mb-2">My Orders</h1>
+  //             <p className="text-gray-600">Track and manage your order history</p>
+  //           </div>
 
-          </div>
-          <div className="bg-white rounded-2xl shadow-xl p-16 text-center">
-            <div className="inline-flex items-center justify-center w-32 h-32 bg-indigo-50 rounded-full mb-6">
-              <FiPackage className="h-16 w-16 text-indigo-600" />
-            </div>
-            <h2 className="text-lg font-extrabold text-gray-900 mb-3">No orders yet</h2>
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              Start shopping to place your first order and track it here!
-            </p>
-            <a
-              href="/products"
-              className="inline-block bg-indigo-600 text-white px-10 py-4 rounded-xl font-semibold hover:bg-indigo-700 transition-all transform hover:scale-105 shadow-lg"
-            >
-              Browse Products
-            </a>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  //         </div>
+  //         <div className="bg-white rounded-2xl shadow-xl p-16 text-center">
+  //           <div className="inline-flex items-center justify-center w-32 h-32 bg-indigo-50 rounded-full mb-6">
+  //             <FiPackage className="h-16 w-16 text-indigo-600" />
+  //           </div>
+  //           <h2 className="text-lg font-extrabold text-gray-900 mb-3">No orders yet</h2>
+  //           <p className="text-gray-600 mb-8 max-w-md mx-auto">
+  //             Start shopping to place your first order and track it here!
+  //           </p>
+  //           <a
+  //             href="/products"
+  //             className="inline-block bg-indigo-600 text-white px-10 py-4 rounded-xl font-semibold hover:bg-indigo-700 transition-all transform hover:scale-105 shadow-lg"
+  //           >
+  //             Browse Products
+  //           </a>
+  //         </div>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
@@ -271,6 +269,14 @@ export default function OrdersPage() {
                   onChange={handleSearchChange}
                   className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                 />
+                {searchQuery !== debouncedSearchQuery && searchQuery && (
+                  <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+                    <div className="flex items-center space-x-2 text-sm text-gray-500">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-indigo-600"></div>
+                      <span>Searching...</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -288,8 +294,8 @@ export default function OrdersPage() {
                     key={filter.value}
                     onClick={() => handleStatusFilter(filter.value)}
                     className={`px-4 py-2 rounded-lg font-medium text-sm transition-all whitespace-nowrap flex-shrink-0 ${selectedStatus === filter.value
-                        ? 'bg-indigo-600 text-white shadow-md transform scale-105'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-indigo-600 text-white shadow-md transform scale-105'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                   >
                     {filter.label}

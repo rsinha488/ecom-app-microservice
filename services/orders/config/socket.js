@@ -52,6 +52,7 @@ const initializeSocket = (server) => {
 
     // Handle disconnection
     socket.on('disconnect', () => {
+      console.log(`[Socket] Disconnected: ${socket.id}`); // Added log
       console.log(`[Socket] User disconnected: ${socket.userId} (Socket ID: ${socket.id})`);
     });
 
@@ -64,12 +65,15 @@ const initializeSocket = (server) => {
 
   // Listen to order events and emit to clients
   orderEvents.on(ORDER_EVENTS.CREATED, (order) => {
+    console.log(`[Socket] Event received: ORDER_CREATED for user ${order.userId}`); // Added log
     console.log(`[Socket] Order placed: ${order._id} for user: ${order.userId}`);
-    io.to(`user:${order.userId}`).emit('order:created', {
+    const roomName = `user:${order.userId}`; // Added roomName variable
+    io.to(roomName).emit('order:created', {
       order,
       message: `Your order #${order.orderNumber} has been placed!`,
       timestamp: new Date(),
     });
+    console.log(`[Socket] Emitted order:created to room ${roomName}`); // Added log
   });
 
   orderEvents.on(ORDER_EVENTS.STATUS_CHANGED, ({ order, oldStatus, newStatus }) => {

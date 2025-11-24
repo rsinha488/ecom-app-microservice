@@ -14,6 +14,7 @@
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError, AxiosResponse } from 'axios';
 import { handleAPIError, type APIError } from '@/utils/apiErrorHandler';
+import { getCookie } from '@/lib/cookies';
 
 // API URLs from environment
 const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:3000';
@@ -57,6 +58,7 @@ export function createEnhancedAPIClient(config: APIClientConfig): AxiosInstance 
   const client = axios.create({
     baseURL,
     timeout: 30000,
+    withCredentials: true, // Send cookies with requests
     headers: {
       'Content-Type': 'application/json',
     },
@@ -65,9 +67,14 @@ export function createEnhancedAPIClient(config: APIClientConfig): AxiosInstance 
   // Request interceptor - add auth token and logging
   client.interceptors.request.use(
     (config) => {
-      // Add authentication token
+      // Add authentication token from cookies
       if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('accessToken');
+        // First try to get from cookies (primary storage)
+        let token = getCookie('accessToken');
+        // Fallback to localStorage for backward compatibility
+        if (!token) {
+          token = localStorage.getItem('accessToken');
+        }
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -122,7 +129,11 @@ export function createEnhancedAPIClient(config: APIClientConfig): AxiosInstance 
         originalRequest._retry = true;
 
         try {
-          const refreshToken = localStorage.getItem('refreshToken');
+          // Try to get refresh token from cookies first, then localStorage
+          let refreshToken = getCookie('refreshToken');
+          if (!refreshToken) {
+            refreshToken = localStorage.getItem('refreshToken');
+          }
           if (refreshToken) {
             const response = await axios.post(`${AUTH_URL}/v1/auth/oauth/token`, {
               grant_type: 'refresh_token',

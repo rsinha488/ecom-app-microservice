@@ -280,10 +280,16 @@ export const ordersAPI = {
   /**
    * Get all orders for a user
    * @param userId - User ID
+   * @param params - Query parameters for filtering/sorting
    * @returns List of user's orders
    */
-  getUserOrders: (userId: string) =>
-    ordersClient.get<APIResponse<{ orders: Order[]; count: number; userId: string }>>(`/v1/orders/user/${userId}`),
+  getUserOrders: (userId: string, params?: {
+    status?: string;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: string;
+  }) =>
+    ordersClient.get<APIResponse<{ orders: Order[]; count: number; userId: string }>>(`/v1/orders/user/${userId}`, { params }),
 
   /**
    * Get a single order by ID
