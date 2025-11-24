@@ -618,17 +618,26 @@ exports.updateOrderStatus = async (req, res) => {
             reason: oldStatus === ORDER_STATUS.DELIVERED
               ? 'Delivered orders are final and cannot be modified'
               : oldStatus === ORDER_STATUS.CANCELLED
-              ? 'Cancelled orders cannot be modified'
-              : `Cannot transition from ${getStatusLabel(oldStatus)} to ${getStatusLabel(newStatus)}`
+                ? 'Cancelled orders cannot be modified'
+                : `Cannot transition from ${getStatusLabel(oldStatus)} to ${getStatusLabel(newStatus)}`
           }
         )
       );
     }
+    // Prepare update object  
+    const update = {
+      status: newStatus,
+    };
+
+    if (newStatus === ORDER_STATUS.CANCELLED) {
+      update.paymentStatus = 4; //refunded
+    } else if (newStatus === ORDER_STATUS.DELIVERED) {
+      update.paymentStatus = 2;//paid
+    }
 
     // Update order status
     const order = await Order.findByIdAndUpdate(
-      id,
-      { status: newStatus },
+      id, update, 
       { new: true, runValidators: true }
     );
 
