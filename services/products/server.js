@@ -9,6 +9,7 @@ const productRoutesV1 = require('./routes/v1/productRoutes');
 const { validateVersion } = require('./middleware/apiVersion');
 const { initializeConsumer } = require('./services/kafkaConsumer');
 const { disconnectConsumer } = require('./config/kafka');
+const redisClient = require('../shared/config/redis');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -90,6 +91,19 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Initialize Redis connection
+async function initializeRedis() {
+  try {
+    console.log('🚀 Connecting to Redis for caching...');
+    await redisClient.connect();
+    console.log('✅ Redis connected successfully');
+  } catch (error) {
+    console.error('❌ Redis connection failed:', error.message);
+    console.warn('⚠️  Products service will continue without Redis caching');
+    // Don't exit - allow service to run without Redis if needed
+  }
+}
+
 // Initialize Kafka consumer
 async function initializeKafka() {
   try {
@@ -108,6 +122,9 @@ async function gracefulShutdown(signal) {
   console.log(`${signal} received: closing server gracefully`);
 
   try {
+    // Disconnect Redis
+    await redisClient.disconnect();
+
     // Disconnect Kafka consumer
     await disconnectConsumer();
 
@@ -135,6 +152,9 @@ const server = app.listen(PORT, async () => {
   console.log(`Products service running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
   console.log(`API Version: v1`);
+
+  // Initialize Redis for caching
+  await initializeRedis();
 
   // Initialize Kafka consumer after server starts
   await initializeKafka();

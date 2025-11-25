@@ -25,8 +25,8 @@ class RedisClient {
 
     try {
       this.client = redis.createClient({
-        url: process.env.REDIS_URL || 'redis://localhost:6379',
-        password: process.env.REDIS_PASSWORD || undefined,
+        url: process.env.REDIS_URL || 'redis://localhost:6379', 
+        password: process.env.REDIS_PASSWORD || undefined, //we dont have password for now
         socket: {
           reconnectStrategy: (retries) => {
             if (retries > 10) {
