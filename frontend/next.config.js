@@ -28,7 +28,7 @@ const nextConfig = {
 
   // Environment variables exposed to browser
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
     NEXT_PUBLIC_AUTH_URL: process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:3000',
     NEXT_PUBLIC_PRODUCTS_URL: process.env.NEXT_PUBLIC_PRODUCTS_URL || 'http://localhost:3001',
     NEXT_PUBLIC_CATEGORIES_URL: process.env.NEXT_PUBLIC_CATEGORIES_URL || 'http://localhost:3002',
