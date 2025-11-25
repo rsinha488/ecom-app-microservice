@@ -19,15 +19,26 @@ const isProduction = process.env.NODE_ENV === 'production';
 app.use(helmet());
 app.use(compression());
 
+// Configure trust proxy based on environment
 if (isProduction) {
-  app.set('trust proxy', 1);
+  app.set('trust proxy', 1); // Trust first proxy (nginx) in production
+} else {
+  app.set('trust proxy', false); // Direct connections in development
 }
 
-// Rate Limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+// Rate limiter middleware to prevent excessive requests (DDoS / brute-force protection)
+const limiter = rateLimit({  
+  windowMs: 15 * 60 * 1000,   // Time window for rate limiting (15 minutes)
+
+  // Maximum number of requests allowed per IP within the time window
+  // In production → 100 requests  
+  // In development → 1000 requests (more lenient)
   max: isProduction ? 100 : 1000,
+
+  // Include useful rate limit info in the `RateLimit-*` response headers
   standardHeaders: true,
+
+  // Disable old/legacy `X-RateLimit-*` headers (deprecated)
   legacyHeaders: false
 });
 
