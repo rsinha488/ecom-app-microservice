@@ -41,7 +41,6 @@ const seedClient = async () => {
     await client.save();
     console.log('Client created successfully:');
     console.log('Client ID:', client.client_id);
-    console.log('Client Secret:', client.client_secret);
     console.log('Redirect URIs:', client.redirect_uris);
 
     process.exit(0);

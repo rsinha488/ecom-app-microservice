@@ -26,7 +26,7 @@ export default function CheckoutPage() {
     zipCode: '',
     country: '',
     // Payment (now using numeric codes)
-    paymentMethod: PaymentMethodCode.CASH_ON_DELIVERY, // 4
+    paymentMethod: PaymentMethodCode.STRIPE, // 7 - Default to online payment
     // Optional fields
     notes: '',
   });
@@ -84,7 +84,7 @@ export default function CheckoutPage() {
           country: formData.country,
         },
         paymentMethod: formData.paymentMethod,
-        paymentStatus: PaymentStatusCode.PENDING, // 2 - In production, this would be set after payment gateway confirms
+        paymentStatus: PaymentStatusCode.PENDING, // 2 - Will be updated after payment processing
       };
 
       console.log('Creating order:', orderData);
@@ -106,11 +106,55 @@ export default function CheckoutPage() {
       const data = await response.json();
       console.log('Order created:', data);
 
-      // Clear cart
+      const orderId = data.data.order._id;
+      const orderNumber = data.data.order.orderNumber;
+
+      // Check if online payment (Stripe)
+      if (formData.paymentMethod === PaymentMethodCode.STRIPE) {
+        console.log('Initiating Stripe checkout...');
+
+        // Create Stripe checkout session
+        const checkoutResponse = await fetch('/api/payment/create-checkout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            orderId,
+            orderNumber,
+            amount: total,
+            currency: 'usd',
+            paymentMethod: formData.paymentMethod,
+            items: items.map((item) => ({
+              productId: item._id,
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price,
+            })),
+          }),
+        });
+
+        if (!checkoutResponse.ok) {
+          const error = await checkoutResponse.json();
+          throw new Error(error.error || 'Failed to create payment session');
+        }
+
+        const checkoutData = await checkoutResponse.json();
+        console.log('Stripe checkout session created:', checkoutData);
+
+        // Clear cart before redirecting to payment
+        dispatch(clearCart());
+
+        // Redirect to Stripe checkout
+        window.location.href = checkoutData.data.checkoutUrl;
+        return;
+      }
+
+      // For Cash on Delivery
       dispatch(clearCart());
 
       // Show success message
-      toast.success(`🎉 Order #${data.data.order.orderNumber} placed successfully! Check your orders page for real-time updates.`, {
+      toast.success(`🎉 Order #${orderNumber} placed successfully! Check your orders page for real-time updates.`, {
         autoClose: 5000,
       });
 
@@ -267,65 +311,50 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="space-y-3">
-                  {/* //Additional payment methods can be enabled in future  when payment gateway integrated
-                  <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                  {/* Stripe Payment - Online payment gateway */}
+                  <label className="flex items-center p-4 border-2 border-indigo-500 rounded-lg cursor-pointer hover:bg-indigo-50 transition">
                     <input
                       type="radio"
                       name="paymentMethod"
-                      value={PaymentMethodCode.CREDIT_CARD}
-                      checked={formData.paymentMethod === PaymentMethodCode.CREDIT_CARD}
+                      value={PaymentMethodCode.STRIPE}
+                      checked={formData.paymentMethod === PaymentMethodCode.STRIPE}
                       onChange={handleInputChange}
-                      className="h-5 w-5 sm:h-4 sm:w-4 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                      disabled
+                      className="h-5 w-5 sm:h-4 sm:w-4 text-indigo-600 focus:ring-indigo-500"
                     />
-                    <span className="ml-3 text-gray-900 font-medium">Credit Card</span>
+                    <div className="ml-3 flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-900 font-medium">Pay Online (Stripe)</span>
+                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Recommended</span>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">Secure payment via credit/debit card</p>
+                    </div>
                   </label>
 
-                  <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value={PaymentMethodCode.DEBIT_CARD}
-                      checked={formData.paymentMethod === PaymentMethodCode.DEBIT_CARD}
-                      onChange={handleInputChange}
-                      className="h-5 w-5 sm:h-4 sm:w-4 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                      disabled
-                    />
-                    <span className="ml-3 text-gray-900 font-medium">Debit Card</span>
-                  </label>
-
-                  <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value={PaymentMethodCode.PAYPAL}
-                      checked={formData.paymentMethod === PaymentMethodCode.PAYPAL}
-                      onChange={handleInputChange}
-                      className="h-5 w-5 sm:h-4 sm:w-4 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                      disabled
-                    />
-                    <span className="ml-3 text-gray-900 font-medium">PayPal</span>
-                  </label> */}
-
-                  <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                  {/* Cash on Delivery */}
+                  <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
                     <input
                       type="radio"
                       name="paymentMethod"
                       value={PaymentMethodCode.CASH_ON_DELIVERY}
                       checked={formData.paymentMethod === PaymentMethodCode.CASH_ON_DELIVERY}
                       onChange={handleInputChange}
-                      className="h-5 w-5 sm:h-4 sm:w-4 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="h-5 w-5 sm:h-4 sm:w-4 text-indigo-600 focus:ring-indigo-500"
                     />
-                    <span className="ml-3 text-gray-900 font-medium">Cash on Delivery</span>
+                    <div className="ml-3 flex-1">
+                      <span className="text-gray-900 font-medium">Cash on Delivery</span>
+                      <p className="text-sm text-gray-600 mt-1">Pay when you receive your order</p>
+                    </div>
                   </label>
                 </div>
 
-                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-800">
-                    <FiCheck className="inline h-4 w-4 mr-1" />
-                    Payment Gateway integration coming soon! For now, select Cash on Delivery to complete your order.
-                  </p>
-                </div>
+                {formData.paymentMethod === PaymentMethodCode.STRIPE && (
+                  <div className="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+                    <p className="text-sm text-indigo-800">
+                      <FiCheck className="inline h-4 w-4 mr-1" />
+                      You will be redirected to Stripe to complete your payment securely.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Order Notes (Optional) */}

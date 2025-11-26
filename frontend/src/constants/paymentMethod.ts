@@ -2,71 +2,77 @@
  * Payment Method Constants (Frontend)
  *
  * Numeric codes for payment methods - synchronized with backend
- * Backend: services/orders/constants/paymentMethod.js
+ * Backend: services/payment/constants/paymentMethod.js
+ *
+ * IMPORTANT: These codes MUST match the backend payment service exactly!
  */
 
 export enum PaymentMethodCode {
   CREDIT_CARD = 1,
   DEBIT_CARD = 2,
-  PAYPAL = 3,
-  CASH_ON_DELIVERY = 4,
-  BANK_TRANSFER = 5,
-  UPI = 6,
-  WALLET = 7,
+  UPI = 3,
+  NET_BANKING = 4,
+  WALLET = 5,
+  CASH_ON_DELIVERY = 6,
+  STRIPE = 7,
+  // PAYPAL = 8  // Removed as per requirement
 }
 
 export const PAYMENT_METHOD_NAME: Record<number, string> = {
   1: 'credit_card',
   2: 'debit_card',
-  3: 'paypal',
-  4: 'cash_on_delivery',
-  5: 'bank_transfer',
-  6: 'upi',
-  7: 'wallet',
+  3: 'upi',
+  4: 'net_banking',
+  5: 'wallet',
+  6: 'cash_on_delivery',
+  7: 'stripe',
+  // 8: 'paypal'  // Removed
 };
 
 export const PAYMENT_METHOD_DISPLAY: Record<number, string> = {
   1: 'Credit Card',
   2: 'Debit Card',
-  3: 'PayPal',
-  4: 'Cash on Delivery',
-  5: 'Bank Transfer',
-  6: 'UPI',
-  7: 'Digital Wallet',
+  3: 'UPI',
+  4: 'Net Banking',
+  5: 'Digital Wallet',
+  6: 'Cash on Delivery',
+  7: 'Stripe',
+  // 8: 'PayPal'  // Removed
 };
 
 export const PAYMENT_METHOD_DESCRIPTION: Record<number, string> = {
   1: 'Pay securely using your credit card',
   2: 'Pay using your debit card',
-  3: 'Pay using your PayPal account',
-  4: 'Pay with cash when the order is delivered',
-  5: 'Transfer payment directly to our bank account',
-  6: 'Pay using UPI (Unified Payments Interface)',
-  7: 'Pay using digital wallets (Paytm, PhonePe, Google Pay, etc.)',
+  3: 'Pay using UPI (Unified Payments Interface)',
+  4: 'Transfer payment directly from your bank account',
+  5: 'Pay using digital wallets (Paytm, PhonePe, Google Pay, etc.)',
+  6: 'Pay with cash when the order is delivered',
+  7: 'Pay securely using Stripe payment gateway',
+  // 8: 'Pay using your PayPal account'  // Removed
 };
 
 export const PAYMENT_METHOD_ICON: Record<number, string> = {
   1: 'FiCreditCard',
   2: 'FiCreditCard',
-  3: 'FaPaypal',
-  4: 'FiDollarSign',
-  5: 'FiHome',
-  6: 'FiSmartphone',
-  7: 'FiPackage',
+  3: 'FiSmartphone', // UPI
+  4: 'FiDollarSign', // Net Banking
+  5: 'FiHome', // Wallet
+  6: 'FiPackage', // Cash on Delivery
+  7: 'FiCreditCard', // Stripe
 };
 
 export const PAYMENT_METHOD_FEE: Record<number, number> = {
   1: 2.9, // 2.9% for credit cards
   2: 2.5, // 2.5% for debit cards
-  3: 3.5, // 3.5% for PayPal
-  4: 0,   // No fee for COD
-  5: 0,   // No fee for bank transfer
-  6: 0,   // No fee for UPI
-  7: 1.5, // 1.5% for wallet
+  3: 0,   // No fee for UPI
+  4: 0,   // No fee for net banking
+  5: 1.5, // 1.5% for wallet
+  6: 0,   // No fee for COD
+  7: 2.9, // 2.9% for Stripe
 };
 
-export const ONLINE_PAYMENT_METHODS = [1, 2, 3, 5, 6, 7];
-export const OFFLINE_PAYMENT_METHODS = [4];
+export const ONLINE_PAYMENT_METHODS = [1, 2, 3, 4, 5, 7]; // All except COD
+export const OFFLINE_PAYMENT_METHODS = [6]; // Only COD
 
 /**
  * Get method label from numeric code
@@ -140,7 +146,7 @@ export function isOfflinePayment(code: number): boolean {
  * Validate payment method code
  */
 export function isValidPaymentMethod(code: number): boolean {
-  return code >= 1 && code <= 7;
+  return code >= 1 && code <= 7 && code !== 8; // 1-7 valid, PayPal (8) removed
 }
 
 /**
@@ -155,7 +161,7 @@ export function getAllPaymentMethods(): number[] {
  * In production, this would come from settings/config
  */
 export function getEnabledPaymentMethods(): number[] {
-  // For now, only COD is enabled (as per current UI)
+  // COD and Stripe are enabled
   // In production, this would be configurable
-  return [PaymentMethodCode.CASH_ON_DELIVERY];
+  return [PaymentMethodCode.CASH_ON_DELIVERY, PaymentMethodCode.STRIPE];
 }

@@ -10,6 +10,7 @@ const orderRoutesV1 = require('./routes/v1/orderRoutes');
 const { validateVersion } = require('./middleware/apiVersion');
 const { initializeSocket } = require('./config/socket');
 const { initializeProducer, createTopics, disconnectProducer } = require('./config/kafka');
+const { startConsumer, disconnectConsumer } = require('./services/kafkaConsumer');
 
 const app = express();
 const server = http.createServer(app);
@@ -97,7 +98,7 @@ initializeSocket(server);
 // Initialize Kafka
 async function initializeKafka() {
   try {
-    console.log('🚀 Initializing Kafka producer...');
+    console.log('🚀 Initializing Kafka producer and consumer...');
 
     // Create required topics
     await createTopics([
@@ -105,14 +106,22 @@ async function initializeKafka() {
       'order.status.changed',
       'order.cancelled',
       'order.completed',
+      'order.confirmed',
+      'order.updated',
       'inventory.reserve',
-      'inventory.release'
+      'inventory.release',
+      'payment.initiated',
+      'payment.completed',
+      'payment.failed'
     ]);
 
     // Initialize producer
     await initializeProducer();
 
-    console.log('✅ Kafka producer initialized successfully');
+    // Initialize consumer to listen for payment events
+    await startConsumer();
+
+    console.log('✅ Kafka producer and consumer initialized successfully');
   } catch (error) {
     console.error('❌ Failed to initialize Kafka:', error.message);
     console.warn('⚠️  Orders service will continue without Kafka integration');
@@ -125,6 +134,9 @@ async function gracefulShutdown(signal) {
   console.log(`${signal} received: closing server gracefully`);
 
   try {
+    // Disconnect Kafka consumer
+    await disconnectConsumer();
+
     // Disconnect Kafka producer
     await disconnectProducer();
 

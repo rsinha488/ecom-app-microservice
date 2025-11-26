@@ -12,8 +12,10 @@ export default function Home() {
     if (initialized) {
       if (!isAuthenticated) {
         router.push('/auth/login');
+        router.refresh();
       } else {
         router.push('/products');
+        router.refresh();
       }
     }
   }, [isAuthenticated, initialized, router]);

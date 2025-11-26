@@ -227,7 +227,7 @@ export default function ProductsPage() {
           </div>
 
           {/* Active Filters */}
-          {hasActiveFilters && (
+          {/* {hasActiveFilters && (
             <div className="mt-4 flex items-center gap-2 flex-wrap">
               <span className="text-sm text-gray-600">Active filters:</span>
               {searchQuery && (
@@ -266,7 +266,7 @@ export default function ProductsPage() {
                 Clear all
               </button>
             </div>
-          )}
+          )} */}
         </div>
 
         {/* Initial Loading State */}
@@ -318,11 +318,11 @@ export default function ProductsPage() {
                 {isSearching && ` for "${searchQuery}"`}
                 {selectedCategory && ` in ${categories.find(c => c.slug === selectedCategory)?.name}`}
               </p>
-              {hasMore && (
+              {/* {hasMore && (
                 <p className="text-sm text-indigo-600 font-medium">
                   Scroll down to load more
                 </p>
-              )}
+              )} */}
             </div>
 
             <div

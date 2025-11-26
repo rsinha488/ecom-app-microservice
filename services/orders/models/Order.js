@@ -75,11 +75,11 @@ const orderSchema = new mongoose.Schema({
     enum: [
       PAYMENT_METHOD_CODE.CREDIT_CARD,       // 1
       PAYMENT_METHOD_CODE.DEBIT_CARD,        // 2
-      PAYMENT_METHOD_CODE.PAYPAL,            // 3
-      PAYMENT_METHOD_CODE.CASH_ON_DELIVERY,  // 4
-      PAYMENT_METHOD_CODE.BANK_TRANSFER,     // 5
-      PAYMENT_METHOD_CODE.UPI,               // 6
-      PAYMENT_METHOD_CODE.WALLET             // 7
+      PAYMENT_METHOD_CODE.UPI,               // 3
+      PAYMENT_METHOD_CODE.NET_BANKING,       // 4
+      PAYMENT_METHOD_CODE.WALLET,            // 5
+      PAYMENT_METHOD_CODE.CASH_ON_DELIVERY,  // 6
+      PAYMENT_METHOD_CODE.STRIPE             // 7
     ],
     required: true
   },

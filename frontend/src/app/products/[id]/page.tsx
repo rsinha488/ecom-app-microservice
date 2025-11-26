@@ -16,6 +16,8 @@ import {
   FiHeart,
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -26,7 +28,12 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [quantity, setQuantity] = useState(1);
+  const cartItem = useSelector(
+    (state: RootState) => state.cart.items.find(i => i._id === productId)
+  );
+
+  const quantity = cartItem?.quantity || 1;
+
 
   useEffect(() => {
     fetchProduct();
@@ -54,24 +61,47 @@ export default function ProductDetailPage() {
   const handleAddToCart = () => {
     if (!product) return;
 
-    // Add product to cart first (or find existing)
-    dispatch(addToCart(product));
+    dispatch(addToCart({ product, quantity, flag: 1 }));// adds or increments 1
 
-    // Update to the desired quantity
-    if (quantity > 1) {
-      dispatch(updateQuantity({ productId: product._id, quantity }));
-    }
 
-    toast.success(`${quantity} x ${product.name} added to cart!`);
+    toast.success(`${product.name} added to cart!`, {
+      position: 'bottom-right',
+      autoClose: 2000,
+    });
   };
+  // const handleAddToCart = () => {
+  //   if (!product) return;
 
+  //   // Add product to cart first (or find existing)
+  //   dispatch(addToCart(product));
+
+  //   // Update to the desired quantity
+  //   if (quantity > 1) {
+  //     dispatch(updateQuantity({ productId: product._id, quantity }));
+  //   }
+
+  //   toast.success(`${quantity} x ${product.name} added to cart!`);
+  // };
+
+  // const handleQuantityChange = (newQuantity: number) => {
+  //   if (newQuantity < 1) return;
+  //   if (product && newQuantity > product.stock) {
+  //     toast.error(`Only ${product.stock} items available in stock`);
+  //     return;
+  //   }
+  //   setQuantity(newQuantity);
+  // };
   const handleQuantityChange = (newQuantity: number) => {
+    if (!product) return;
+
     if (newQuantity < 1) return;
-    if (product && newQuantity > product.stock) {
-      toast.error(`Only ${product.stock} items available in stock`);
+
+    if (newQuantity > product.stock) {
+      toast.error(`Only ${product.stock} items available`);
       return;
     }
-    setQuantity(newQuantity);
+
+    dispatch(updateQuantity({ productId: product._id, quantity: newQuantity }));
   };
 
   if (loading) {
@@ -177,11 +207,10 @@ export default function ProductDetailPage() {
                     {[...Array(5)].map((_, i) => (
                       <FiStar
                         key={i}
-                        className={`h-4 w-4 sm:h-5 sm:w-5 ${
-                          i < Math.floor(product.rating || 0)
-                            ? 'text-yellow-400 fill-current'
-                            : 'text-gray-300'
-                        }`}
+                        className={`h-4 w-4 sm:h-5 sm:w-5 ${i < Math.floor(product.rating || 0)
+                          ? 'text-yellow-400 fill-current'
+                          : 'text-gray-300'
+                          }`}
                       />
                     ))}
                     <span className="ml-2 text-sm sm:text-base text-gray-600">
@@ -241,14 +270,14 @@ export default function ProductDetailPage() {
                   <div className="flex items-center space-x-3">
                     <button
                       onClick={() => handleQuantityChange(quantity - 1)}
-                       disabled={quantity <= 1}
+                      disabled={quantity <= 1}
                       className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       -
                     </button>
                     <input
                       type="text"
-                      
+
                       value={quantity}
                       disabled
                       // onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
@@ -270,11 +299,10 @@ export default function ProductDetailPage() {
                 <button
                   onClick={handleAddToCart}
                   disabled={!inStock}
-                  className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3 rounded-lg font-medium transition ${
-                    inStock
-                      ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
+                  className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3 rounded-lg font-medium transition ${inStock
+                    ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
                 >
                   <FiShoppingCart className="h-5 w-5" />
                   <span>{inStock ? 'Add to Cart' : 'Out of Stock'}</span>

@@ -19,7 +19,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     e.preventDefault();
     e.stopPropagation();
 
-    dispatch(addToCart(product));
+    dispatch(addToCart({ product, quantity: 1 }));
 
     toast.success(`${product.name} added to cart!`, {
       position: 'bottom-right',
@@ -99,11 +99,10 @@ export default function ProductCard({ product }: ProductCardProps) {
               {[...Array(5)].map((_, i) => (
                 <FiStar
                   key={i}
-                  className={`h-4 w-4 ${
-                    i < Math.floor(product.rating)
+                  className={`h-4 w-4 ${i < Math.floor(product.rating)
                       ? 'text-yellow-400 fill-yellow-400'
                       : 'text-gray-300'
-                  }`}
+                    }`}
                 />
               ))}
             </div>
@@ -128,11 +127,10 @@ export default function ProductCard({ product }: ProductCardProps) {
             <button
               onClick={handleAddToCart}
               disabled={product.stock <= 0}
-              className={`p-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-all duration-300 ${
-                product.stock > 0
+              className={`p-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-all duration-300 ${product.stock > 0
                   ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md hover:shadow-lg'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
+                }`}
             >
               <FiShoppingCart className="h-5 w-5" />
             </button>

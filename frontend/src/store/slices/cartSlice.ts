@@ -53,13 +53,17 @@ const cartSlice = createSlice({
   name: 'cart',
   initialState,
   reducers: {
-    addToCart: (state, action: PayloadAction<Product>) => {
-      const existingItem = state.items.find((item) => item._id === action.payload._id);
+    addToCart: (state, action: PayloadAction<{ product: Product; quantity?: number, flag?: number }>) => {
+      const { product, quantity = 1, flag = 0 } = action.payload;
 
-      if (existingItem) {
-        existingItem.quantity += 1;
+      const existing = state.items.find((item) => item._id === product._id);
+
+      if (existing && flag === 0) {//flag for card page add to cart will inc items existing
+        existing.quantity += quantity;
+      } else if (existing && flag === 1) {//flag 1 addtocart will replace in
+        existing.quantity = quantity;
       } else {
-        state.items.push({ ...action.payload, quantity: 1 });
+        state.items.push({ ...product, quantity });
       }
 
       const totals = calculateTotals(state.items);
