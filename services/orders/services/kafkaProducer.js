@@ -102,9 +102,9 @@ async function publishOrderStatusChanged(data) {
  * @param {Object} order - Cancelled order document
  * @returns {Promise<void>}
  */
-async function publishOrderCancelled(order) {
+async function publishOrderCancelled(order, metadata = {}) {
   try {
-    // Publish cancellation event
+    // Publish cancellation event with payment metadata for refund processing
     await publishEvent(TOPICS.ORDER_CANCELLED, {
       eventType: 'ORDER_CANCELLED',
       orderId: order._id.toString(),
@@ -112,7 +112,13 @@ async function publishOrderCancelled(order) {
       orderNumber: order.orderNumber,
       totalAmount: order.totalAmount,
       items: order.items,
-      cancelledAt: order.cancelledAt || new Date().toISOString()
+      cancelledAt: order.cancelledAt || new Date().toISOString(),
+      // Payment details for refund processing
+      paymentMethod: order.paymentMethod,
+      paymentStatus: order.paymentStatus,
+      requiresRefund: metadata.requiresRefund || false,
+      cancelledBy: metadata.cancelledBy,
+      cancelReason: metadata.cancelReason || 'Order cancelled'
     }, order._id.toString());
 
     // Publish stock release request to restore inventory
@@ -130,6 +136,9 @@ async function publishOrderCancelled(order) {
     }, order._id.toString());
 
     console.log(`✅ Published order cancellation events for order ${order.orderNumber}`);
+    if (metadata.requiresRefund) {
+      console.log(`💰 Refund will be initiated for Stripe payment`);
+    }
   } catch (error) {
     console.error(`❌ Failed to publish order cancelled event:`, error.message);
   }

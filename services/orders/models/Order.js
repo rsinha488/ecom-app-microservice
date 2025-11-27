@@ -94,6 +94,10 @@ const orderSchema = new mongoose.Schema({
   },
   cancelledAt: {
     type: Date
+  },
+  metadata: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
   }
 }, {
   timestamps: true

@@ -130,6 +130,14 @@ async function handleOrderCreated(event) {
  * When an order is cancelled, cancel or refund associated payment.
  * This is a COMPENSATING TRANSACTION in the SAGA pattern.
  *
+ * For Stripe payments that are PAID:
+ * - Initiates automatic refund via Stripe API
+ * - Updates payment status to REFUNDED
+ * - Refund typically takes 5-10 business days to appear in customer's account
+ *
+ * For COD or pending payments:
+ * - Simply cancels the payment
+ *
  * @param {Object} event - Order cancelled event
  */
 async function handleOrderCancelled(event) {
@@ -137,9 +145,21 @@ async function handleOrderCancelled(event) {
   session.startTransaction();
 
   try {
-    const { orderId, reason: cancelReason } = event;
+    const {
+      orderId,
+      cancelReason,
+      requiresRefund,
+      paymentMethod,
+      paymentStatus,
+      cancelledBy
+    } = event;
 
-    console.log('[SAGA] Handling order cancellation:', orderId);
+    console.log('[SAGA] Handling order cancellation:', {
+      orderId,
+      requiresRefund,
+      paymentMethod,
+      paymentStatus
+    });
 
     // Find payment for this order
     const payment = await Payment.findOne({ orderId });
@@ -150,7 +170,7 @@ async function handleOrderCancelled(event) {
       return;
     }
 
-    // Handle based on payment status
+    // Handle based on payment status and method
     switch (payment.status) {
       case PAYMENT_STATUS.PENDING:
       case PAYMENT_STATUS.PROCESSING:
@@ -169,9 +189,78 @@ async function handleOrderCancelled(event) {
         break;
 
       case PAYMENT_STATUS.COMPLETED:
-        // Completed payments need refund (handled separately by admin)
-        console.log('[SAGA] Completed payment requires manual refund:', payment._id);
-        // Could trigger automatic refund workflow here
+        // Completed payments need refund
+        if (requiresRefund && paymentMethod === 7) {
+          // Stripe payment - initiate automatic refund
+          console.log('[SAGA] 💰 Initiating Stripe refund for payment:', payment._id);
+
+          try {
+            const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+            // Create refund via Stripe API
+            const refund = await stripe.refunds.create({
+              payment_intent: payment.stripeDetails.paymentIntentId,
+              reason: 'requested_by_customer',
+              metadata: {
+                orderId: orderId.toString(),
+                cancelledBy: cancelledBy || 'customer',
+                cancelReason: cancelReason || 'Customer requested cancellation'
+              }
+            });
+
+            console.log('[SAGA] ✅ Stripe refund created:', refund.id);
+
+            // Update payment with refund details
+            payment.status = PAYMENT_STATUS.REFUNDED;
+            payment.refundDetails = {
+              refundId: refund.id,
+              refundAmount: refund.amount / 100, // Convert from cents
+              refundReason: cancelReason || 'Customer requested cancellation',
+              refundedAt: new Date()
+            };
+            payment.stripeDetails.refundId = refund.id;
+
+            await payment.save({ session });
+
+            console.log('[SAGA] 💳 Payment refunded successfully');
+            console.log('[SAGA] ℹ️  Refund will appear in customer account in 5-10 business days');
+
+            // Publish refund event
+            const { publishPaymentRefunded } = require('./kafkaProducer');
+            await publishPaymentRefunded(payment, {
+              correlationId: event.correlationId,
+              reason: cancelReason,
+              cancelledBy
+            });
+
+          } catch (stripeError) {
+            console.error('[SAGA] ❌ Stripe refund failed:', stripeError.message);
+
+            // Mark payment for manual refund processing
+            if (payment.metadata instanceof Map) {
+              payment.metadata.set('refundFailed', true);
+              payment.metadata.set('refundError', stripeError.message);
+              payment.metadata.set('requiresManualRefund', true);
+            } else {
+              payment.metadata = {
+                ...payment.metadata,
+                refundFailed: true,
+                refundError: stripeError.message,
+                requiresManualRefund: true
+              };
+            }
+
+            await payment.save({ session });
+
+            console.log('[SAGA] ⚠️  Payment marked for manual refund processing');
+            throw stripeError; // Re-throw to trigger compensation
+          }
+
+        } else {
+          // Non-Stripe or COD payment
+          console.log('[SAGA] Payment does not require automated refund:', payment._id);
+          console.log('[SAGA] Payment method:', paymentMethod, 'Requires refund:', requiresRefund);
+        }
         break;
 
       case PAYMENT_STATUS.CANCELLED:

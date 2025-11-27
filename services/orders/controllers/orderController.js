@@ -28,6 +28,7 @@ const {
   publishOrderCancelled,
   publishOrderCompleted
 } = require('../services/kafkaProducer');
+const { executeCancellationSaga } = require('../saga/cancellationSaga');
 
 /**
  * Get all orders
@@ -1006,14 +1007,26 @@ exports.cancelOrder = async (req, res) => {
       );
     }
 
-    // Update order status to CANCELLED
-    const updatedOrder = await Order.findByIdAndUpdate(
-      id,
-      { status: ORDER_STATUS.CANCELLED, cancelledAt: new Date() },
-      { new: true, runValidators: true }
-    );
+    // Execute Cancellation SAGA
+    console.log(`[Controller] Executing cancellation SAGA for order ${id}`);
 
-    // Prepare event data
+    const sagaResult = await executeCancellationSaga(id, {
+      userId: requestingUserId.toString(),
+      reason: req.body?.reason || 'Cancelled by customer'
+    });
+
+    if (!sagaResult.success) {
+      return res.status(500).json(
+        ErrorResponse.serverError(
+          'Failed to cancel order',
+          sagaResult.message || 'SAGA execution failed'
+        )
+      );
+    }
+
+    const updatedOrder = sagaResult.order;
+
+    // Prepare event data for real-time notifications
     const statusChangeData = {
       order: updatedOrder,
       oldStatus: currentStatus,
@@ -1028,14 +1041,10 @@ exports.cancelOrder = async (req, res) => {
     // Emit cancellation event
     orderEvents.emit(ORDER_EVENTS.CANCELLED, updatedOrder);
 
-    // Publish to Kafka for inter-service communication (async, non-blocking)
+    // Publish status change to Kafka (async, non-blocking)
     setImmediate(() => {
       publishOrderStatusChanged(statusChangeData).catch(err => {
         console.error('Failed to publish status change to Kafka:', err.message);
-      });
-
-      publishOrderCancelled(updatedOrder).catch(err => {
-        console.error('Failed to publish order cancelled to Kafka:', err.message);
       });
     });
 
@@ -1047,9 +1056,11 @@ exports.cancelOrder = async (req, res) => {
           oldStatus: currentStatus,
           oldStatusLabel: getStatusLabel(currentStatus),
           newStatus: ORDER_STATUS.CANCELLED,
-          newStatusLabel: getStatusLabel(ORDER_STATUS.CANCELLED)
+          newStatusLabel: getStatusLabel(ORDER_STATUS.CANCELLED),
+          sagaId: sagaResult.sagaId,
+          refundInitiated: sagaResult.refundInitiated
         },
-        'Order cancelled successfully'
+        sagaResult.duplicate ? 'Order already cancelled' : 'Order cancelled successfully'
       )
     );
 

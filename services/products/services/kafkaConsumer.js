@@ -20,6 +20,19 @@ const TOPICS = {
   ORDER_CANCELLED: 'order.cancelled'
 };
 
+// In-memory cache for processed stock releases (move to Redis in production)
+const processedStockReleases = new Map();
+
+// Cleanup old entries every hour to prevent memory leaks
+setInterval(() => {
+  const oneHourAgo = Date.now() - 3600000;
+  for (const [key, timestamp] of processedStockReleases.entries()) {
+    if (timestamp < oneHourAgo) {
+      processedStockReleases.delete(key);
+    }
+  }
+}, 3600000);
+
 /**
  * Initialize Kafka consumer and start processing messages
  * Sets up subscription and message handlers
@@ -151,16 +164,21 @@ async function handleStockReserveRequest(event) {
  * Handle stock release request
  * Called when an order is cancelled or failed
  *
+ * Implements idempotency to prevent duplicate stock restoration:
+ * - Tracks processed orders in memory (can be moved to Redis for distributed systems)
+ * - Checks event sagaId to detect duplicates
+ *
  * @param {Object} event - Stock release event
  * @param {string} event.orderId - Order ID
  * @param {string} event.orderNumber - Human-readable order number
  * @param {Array<Object>} event.items - Items to release
  * @param {string} event.reason - Reason for release
+ * @param {string} event.sagaId - SAGA correlation ID for idempotency
  * @returns {Promise<void>}
  */
 async function handleStockReleaseRequest(event) {
   try {
-    const { orderId, orderNumber, items, reason } = event;
+    const { orderId, orderNumber, items, reason, sagaId } = event;
 
     console.log(`🔓 Processing stock release for order ${orderNumber} (reason: ${reason})`);
 
@@ -170,17 +188,31 @@ async function handleStockReleaseRequest(event) {
       return;
     }
 
+    // Idempotency check: Check if this stock release was already processed
+    const idempotencyKey = sagaId ? `${sagaId}-stock-release` : `${orderId}-stock-release`;
+
+    if (processedStockReleases.has(idempotencyKey)) {
+      console.log(`⏭️  Stock release already processed for order ${orderNumber} (idempotency key: ${idempotencyKey})`);
+      console.log(`⏭️  Skipping duplicate stock release - stock will NOT be restored again`);
+      return; // Skip duplicate processing
+    }
+
     // Release stock back to inventory
     const result = await releaseStock(orderId, items, reason);
 
     if (result.success) {
+      // Mark as processed (idempotency)
+      processedStockReleases.set(idempotencyKey, Date.now());
+
       console.log(`✅ Stock release completed for order ${orderNumber}:`, {
         released: result.released.length,
-        orderId
+        orderId,
+        idempotencyKey
       });
 
-      // TODO: Publish confirmation event if needed
-      // await publishStockReleaseSuccess(orderId, result);
+      // TODO: Publish confirmation event back to Order service
+      // This would trigger markStockReleased() in Order service SAGA
+      // await publishStockReleaseSuccess(orderId, result, sagaId);
     } else {
       console.warn(`⚠️  Stock release partially failed for order ${orderNumber}:`, {
         released: result.released.length,
@@ -189,7 +221,7 @@ async function handleStockReleaseRequest(event) {
       });
 
       // TODO: Publish partial failure event for manual review
-      // await publishStockReleasePartialFailure(orderId, result);
+      // await publishStockReleasePartialFailure(orderId, result, sagaId);
     }
   } catch (error) {
     console.error(`❌ Critical error processing stock release request:`, error.message);
@@ -303,11 +335,13 @@ async function handlePaymentFailed(event) {
  * Handle order.cancelled event
  * Release stock when order is cancelled
  *
+ * Implements idempotency using SAGA correlation ID
+ *
  * @param {Object} event - Order cancelled event
  */
 async function handleOrderCancelled(event) {
   try {
-    const { orderId, items, reason } = event.data || event;
+    const { orderId, items, reason, sagaId, orderNumber } = event.data || event;
 
     console.log(`🔓 Releasing stock for cancelled order: ${orderId}`);
 
@@ -316,15 +350,28 @@ async function handleOrderCancelled(event) {
       return;
     }
 
+    // Idempotency check: Use same key format as handleStockReleaseRequest
+    const idempotencyKey = sagaId ? `${sagaId}-stock-release` : `${orderId}-stock-release`;
+
+    if (processedStockReleases.has(idempotencyKey)) {
+      console.log(`⏭️  Stock release already processed for cancelled order ${orderNumber || orderId}`);
+      console.log(`⏭️  Skipping duplicate stock release - stock will NOT be restored again`);
+      return; // Skip duplicate processing
+    }
+
     // Release stock
     const result = await releaseStock(orderId, items, reason || 'Order cancelled');
 
     if (result.success) {
-      console.log(`✅ Stock released for cancelled order ${orderId}:`, {
-        released: result.released.length
+      // Mark as processed (idempotency)
+      processedStockReleases.set(idempotencyKey, Date.now());
+
+      console.log(`✅ Stock released for cancelled order ${orderNumber || orderId}:`, {
+        released: result.released.length,
+        idempotencyKey
       });
     } else {
-      console.warn(`⚠️  Stock release partially failed for cancelled order ${orderId}:`, {
+      console.warn(`⚠️  Stock release partially failed for cancelled order ${orderNumber || orderId}:`, {
         released: result.released.length,
         failed: result.failed.length
       });
