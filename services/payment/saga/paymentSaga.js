@@ -430,35 +430,93 @@ async function executePaymentSaga(paymentData, metadata = {}) {
  * @param {Object} metadata - Event metadata
  * @returns {Promise<Object>} Result
  */
-async function handlePaymentCompletion(payment, metadata = {}) {
+async function handlePaymentCompletion(payment, metadata = {}, retryCount = 0) {
+  const MAX_RETRIES = 3;
+
+  console.log('[SAGA] 🎉 Handling payment completion', {
+    paymentId: payment._id,
+    orderId: payment.orderId,
+    amount: payment.amount,
+    currentStatus: payment.status,
+    correlationId: metadata.correlationId,
+    retryCount
+  });
+
+  // Check if payment is already completed - avoid duplicate processing
+  if (payment.status === PAYMENT_STATUS.COMPLETED) {
+    console.log('[SAGA] ⚠️ Payment already completed, checking if event was published...');
+
+    // Check if we already published the event by looking at metadata
+    const eventPublished = payment.metadata?.get?.('eventPublished') || payment.metadata?.eventPublished;
+
+    if (eventPublished) {
+      console.log('[SAGA] ✅ Event already published, skipping duplicate');
+      return { success: true, duplicate: true };
+    }
+
+    // Payment completed but event not published - publish it now
+    console.log('[SAGA] 📤 Payment completed but event not published, publishing now...');
+    await publishPaymentCompleted(payment, metadata);
+
+    // Mark event as published (without transaction to avoid conflicts)
+    try {
+      if (payment.metadata instanceof Map) {
+        payment.metadata.set('eventPublished', true);
+      } else {
+        payment.metadata = { ...payment.metadata, eventPublished: true };
+      }
+      await payment.save();
+    } catch (err) {
+      console.log('[SAGA] ⚠️ Could not update eventPublished flag:', err.message);
+      // Non-critical, continue
+    }
+
+    console.log('[SAGA] ✅✅✅ payment.completed event published successfully! ✅✅✅');
+    return { success: true };
+  }
+
   const session = await mongoose.startSession();
 
   try {
     await session.startTransaction();
 
-    console.log('[SAGA] 🎉 Handling payment completion', {
-      paymentId: payment._id,
-      orderId: payment.orderId,
-      amount: payment.amount,
-      correlationId: metadata.correlationId
-    });
+    // Refresh payment document within transaction to get latest state
+    const latestPayment = await Payment.findById(payment._id).session(session);
+
+    if (!latestPayment) {
+      throw new Error('Payment not found');
+    }
+
+    // Double-check if payment was completed by another webhook
+    if (latestPayment.status === PAYMENT_STATUS.COMPLETED) {
+      console.log('[SAGA] ⚠️ Payment was completed by another webhook, aborting transaction');
+      await session.abortTransaction();
+
+      // Publish event if not already published
+      await publishPaymentCompleted(latestPayment, metadata);
+      console.log('[SAGA] ✅✅✅ payment.completed event published successfully! ✅✅✅');
+
+      return { success: true, duplicate: true };
+    }
 
     // Update SAGA state in payment metadata
-    if (payment.metadata instanceof Map) {
-      payment.metadata.set('sagaState', SAGA_STATES.PAYMENT_COMPLETED);
-      payment.metadata.set('completedAt', new Date());
+    if (latestPayment.metadata instanceof Map) {
+      latestPayment.metadata.set('sagaState', SAGA_STATES.PAYMENT_COMPLETED);
+      latestPayment.metadata.set('completedAt', new Date());
+      latestPayment.metadata.set('eventPublished', true);
     } else {
-      payment.metadata = {
-        ...payment.metadata,
+      latestPayment.metadata = {
+        ...latestPayment.metadata,
         sagaState: SAGA_STATES.PAYMENT_COMPLETED,
-        completedAt: new Date()
+        completedAt: new Date(),
+        eventPublished: true
       };
     }
 
-    await payment.save({ session });
+    await latestPayment.save({ session });
     await session.commitTransaction();
 
-    console.log('[SAGA] ✓ Payment status: COMPLETED');
+    console.log('[SAGA] ✓ Payment metadata updated with SAGA state');
 
     // Publish payment.completed event (ONLY ONCE)
     // This triggers Order Service to:
@@ -466,14 +524,14 @@ async function handlePaymentCompletion(payment, metadata = {}) {
     // - Update order payment status to PAID
     console.log('[SAGA] 📤 About to publish payment.completed event...');
     console.log('[SAGA] Payment data:', {
-      paymentId: payment._id,
-      orderId: payment.orderId,
-      amount: payment.amount,
-      status: payment.status
+      paymentId: latestPayment._id,
+      orderId: latestPayment.orderId,
+      amount: latestPayment.amount,
+      status: latestPayment.status
     });
     console.log('[SAGA] Metadata:', metadata);
 
-    await publishPaymentCompleted(payment, metadata);
+    await publishPaymentCompleted(latestPayment, metadata);
 
     console.log('[SAGA] ✅✅✅ payment.completed event published successfully! ✅✅✅');
     console.log('[SAGA] → Order Service will update order to PROCESSING/PAID');
@@ -483,16 +541,36 @@ async function handlePaymentCompletion(payment, metadata = {}) {
 
   } catch (error) {
     await session.abortTransaction();
+
+    // Check if this is a transient transaction error (write conflict)
+    const isTransientError = error.errorLabels?.includes('TransientTransactionError') ||
+                            error.code === 112 || // WriteConflict
+                            error.codeName === 'WriteConflict';
+
+    if (isTransientError && retryCount < MAX_RETRIES) {
+      console.log(`[SAGA] ⚠️ Write conflict detected, retrying (${retryCount + 1}/${MAX_RETRIES})...`);
+
+      // Wait a bit before retrying (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, 100 * Math.pow(2, retryCount)));
+
+      // Refresh payment and retry
+      const refreshedPayment = await Payment.findById(payment._id);
+      return handlePaymentCompletion(refreshedPayment, metadata, retryCount + 1);
+    }
+
     console.error('[SAGA] ❌ Error in payment completion:', error);
 
-    // Trigger rollback - notify services to compensate
-    await publishSagaCompensation({
-      action: 'rollback_payment_completion',
-      paymentId: payment._id.toString(),
-      orderId: payment.orderId.toString(),
-      reason: error.message,
-      timestamp: new Date()
-    }, metadata);
+    // Only publish compensation if not a transient error or retries exhausted
+    if (!isTransientError || retryCount >= MAX_RETRIES) {
+      console.log('[SAGA] Publishing compensation event due to permanent failure');
+      await publishSagaCompensation({
+        action: 'rollback_payment_completion',
+        paymentId: payment._id.toString(),
+        orderId: payment.orderId.toString(),
+        reason: error.message,
+        timestamp: new Date()
+      }, metadata);
+    }
 
     return { success: false, error: error.message };
   } finally {

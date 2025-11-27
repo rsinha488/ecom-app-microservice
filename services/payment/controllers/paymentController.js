@@ -588,6 +588,7 @@ exports.handleStripeWebhook = async (req, res) => {
         const checkoutSession = event.data.object;
         console.log('[Webhook] Checkout Session ID:', checkoutSession.id);
         console.log('[Webhook] Payment Intent ID:', checkoutSession.payment_intent);
+        console.log('[Webhook] Payment Status:', checkoutSession.payment_status);
 
         // Find payment by Stripe session ID
         const payment = await Payment.findOne({
@@ -600,17 +601,48 @@ exports.handleStripeWebhook = async (req, res) => {
         }
 
         console.log('[Webhook] ✅ Payment found:', payment._id);
-        console.log('[Webhook] Updating payment with payment intent details...');
+        console.log('[Webhook] Current payment status:', payment.status);
 
         // Update payment with Stripe details
-        payment.status = PAYMENT_STATUS.PROCESSING;
         payment.stripeDetails.paymentIntentId = checkoutSession.payment_intent;
         payment.stripeDetails.customerId = checkoutSession.customer;
         payment.transactionId = checkoutSession.payment_intent;
 
-        await payment.save({ session });
-        console.log('[Webhook] ✅ Payment updated with PROCESSING status');
-        console.log('[Webhook] ⏳ Waiting for payment_intent.succeeded event...');
+        // Check if payment is already paid (happens when webhooks arrive out of order)
+        if (checkoutSession.payment_status === 'paid') {
+          console.log('[Webhook] 💳 Payment already paid in checkout session, completing now...');
+
+          // Complete the payment immediately
+          payment.status = PAYMENT_STATUS.COMPLETED;
+          payment.completedAt = new Date();
+
+          await payment.save({ session });
+          console.log('[Webhook] ✅ Payment completed via checkout.session.completed');
+
+          console.log('[Webhook] 🚀 Triggering SAGA completion for payment:', payment._id);
+
+          // Continue SAGA flow - publish completion event
+          const metadata = {
+            correlationId: payment.metadata?.get('sagaId') || generateCorrelationId(),
+            userId: payment.userId.toString(),
+            orderId: payment.orderId.toString(),
+            source: 'stripe-webhook-checkout-session'
+          };
+
+          console.log('[Webhook] SAGA metadata:', metadata);
+
+          await handlePaymentCompletion(payment, metadata);
+
+          console.log('[Webhook] ✅ SAGA completion handler executed');
+        } else {
+          // Payment not yet paid, update to PROCESSING and wait for payment_intent.succeeded
+          payment.status = PAYMENT_STATUS.PROCESSING;
+
+          await payment.save({ session });
+          console.log('[Webhook] ✅ Payment updated with PROCESSING status');
+          console.log('[Webhook] ⏳ Waiting for payment_intent.succeeded event...');
+        }
+
         break;
       }
 
