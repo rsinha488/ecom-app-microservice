@@ -98,7 +98,7 @@ async function handleOrderCreated(event) {
   session.startTransaction();
 
   try {
-    const { orderId, userId, totalAmount, items } = event.data;
+    const { orderId, userId, totalAmount, items } = event;
 
     console.log('[SAGA] Handling order created:', orderId);
 
@@ -137,7 +137,7 @@ async function handleOrderCancelled(event) {
   session.startTransaction();
 
   try {
-    const { orderId, cancelReason } = event.data;
+    const { orderId, reason: cancelReason } = event;
 
     console.log('[SAGA] Handling order cancellation:', orderId);
 
@@ -161,7 +161,7 @@ async function handleOrderCancelled(event) {
         await payment.save({ session });
 
         await publishPaymentCancelled(payment, {
-          correlationId: event.metadata.correlationId,
+          correlationId: event.correlationId,
           reason: cancelReason
         });
 
@@ -190,10 +190,10 @@ async function handleOrderCancelled(event) {
     // Publish compensation failure event
     await publishSagaCompensation({
       action: 'cancel_payment_failed',
-      orderId: event.data.orderId,
+      orderId: event.orderId,
       error: error.message
     }, {
-      correlationId: event.metadata.correlationId
+      correlationId: event.correlationId
     });
   } finally {
     session.endSession();
@@ -209,7 +209,7 @@ async function handleOrderCancelled(event) {
  */
 async function handleOrderStatusChanged(event) {
   try {
-    const { orderId, oldStatus, newStatus, statusLabel } = event.data;
+    const { orderId, oldStatus, newStatus } = event;
 
     console.log('[SAGA] Handling order status change:', {
       orderId,
@@ -251,7 +251,7 @@ async function handleSagaCompensation(event) {
   session.startTransaction();
 
   try {
-    const { action, paymentId, orderId, reason } = event.data;
+    const { action, paymentId, orderId, reason } = event;
 
     console.log('[SAGA] Handling compensation:', action);
 
@@ -290,9 +290,9 @@ async function handleSagaCompensation(event) {
     await publishSagaCompensation({
       action: 'compensation_failed',
       error: error.message,
-      originalAction: event.data.action
+      originalAction: event.action
     }, {
-      correlationId: event.metadata.correlationId
+      correlationId: event.correlationId
     });
   } finally {
     session.endSession();

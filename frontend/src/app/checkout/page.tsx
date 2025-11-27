@@ -70,7 +70,7 @@ export default function CheckoutPage() {
       // Prepare order data
       const orderData = {
         items: items.map((item) => ({
-          productId: item._id, // Note: productId not product_id
+          productId: item._id,
           productName: item.name,
           quantity: item.quantity,
           price: item.price,
@@ -84,12 +84,64 @@ export default function CheckoutPage() {
           country: formData.country,
         },
         paymentMethod: formData.paymentMethod,
-        paymentStatus: PaymentStatusCode.PENDING, // 2 - Will be updated after payment processing
+        paymentStatus: PaymentStatusCode.PENDING,
       };
 
-      console.log('Creating order:', orderData);
+      // STRIPE PAYMENT: SAGA orchestration handles order creation
+      if (formData.paymentMethod === PaymentMethodCode.STRIPE) {
+        console.log('Initiating Stripe payment SAGA...');
 
-      // Create order via API
+        // Create Stripe checkout session
+        // The payment SAGA will:
+        // 1. Create payment record
+        // 2. Publish payment.initiated event
+        // 3. Order Service creates order
+        // 4. Return Stripe checkout URL
+        const checkoutResponse = await fetch('/api/payment/create-checkout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            amount: total,
+            currency: 'usd',
+            paymentMethod: formData.paymentMethod,
+            items: items.map((item) => ({
+              productId: item._id,
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price,
+            })),
+            shippingAddress: {
+              street: formData.street,
+              city: formData.city,
+              state: formData.state,
+              zipCode: formData.zipCode,
+              country: formData.country,
+            },
+          }),
+        });
+
+        if (!checkoutResponse.ok) {
+          const error = await checkoutResponse.json();
+          throw new Error(error.error || 'Failed to create payment session');
+        }
+
+        const checkoutData = await checkoutResponse.json();
+        console.log('Stripe payment SAGA initiated:', checkoutData);
+
+        // Clear cart before redirecting
+        // dispatch(clearCart());
+
+        // Redirect to Stripe
+        window.location.href = checkoutData.data.checkoutUrl;
+
+        return;
+      }
+
+      // COD PAYMENT: Create order immediately
+      console.log('Creating COD order:', orderData);
+
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: {
@@ -104,68 +156,28 @@ export default function CheckoutPage() {
       }
 
       const data = await response.json();
-      console.log('Order created:', data);
+      // const orderNumber = data.data.order.orderNumber;
 
-      const orderId = data.data.order._id;
-      const orderNumber = data.data.order.orderNumber;
+      // if (formData.paymentMethod === PaymentMethodCode.CASH_ON_DELIVERY) {
 
-      // Check if online payment (Stripe)
-      if (formData.paymentMethod === PaymentMethodCode.STRIPE) {
-        console.log('Initiating Stripe checkout...');
 
-        // Create Stripe checkout session
-        const checkoutResponse = await fetch('/api/payment/create-checkout', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            orderId,
-            orderNumber,
-            amount: total,
-            currency: 'usd',
-            paymentMethod: formData.paymentMethod,
-            items: items.map((item) => ({
-              productId: item._id,
-              name: item.name,
-              quantity: item.quantity,
-              price: item.price,
-            })),
-          }),
-        });
+      //   // Clear cart
+      //   dispatch(clearCart());
 
-        if (!checkoutResponse.ok) {
-          const error = await checkoutResponse.json();
-          throw new Error(error.error || 'Failed to create payment session');
-        }
+      //   // Redirect to orders page
+      //   // setTimeout(() => {
+      //   //   router.push('/orders');
+      //   // }, 2000);
+      // }
 
-        const checkoutData = await checkoutResponse.json();
-        console.log('Stripe checkout session created:', checkoutData);
 
-        // Clear cart before redirecting to payment
-        dispatch(clearCart());
-
-        // Redirect to Stripe checkout
-        window.location.href = checkoutData.data.checkoutUrl;
-        return;
-      }
-
-      // For Cash on Delivery
-      dispatch(clearCart());
-
-      // Show success message
-      toast.success(`🎉 Order #${orderNumber} placed successfully! Check your orders page for real-time updates.`, {
-        autoClose: 5000,
-      });
-
-      // Redirect to orders page
-      setTimeout(() => {
-        router.push('/orders');
-      }, 2000);
     } catch (error: any) {
       console.error('Order creation error:', error);
       toast.error(error.message || 'Failed to place order. Please try again.');
     } finally {
+      // Clear cart before redirecting
+      dispatch(clearCart());
+
       setIsSubmitting(false);
     }
   };

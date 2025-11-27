@@ -15,6 +15,7 @@
  */
 
 // Numeric method codes (stored in database)
+// IMPORTANT: These MUST match orders service and frontend exactly!
 const PAYMENT_METHOD = {
   CREDIT_CARD: 1,
   DEBIT_CARD: 2,
@@ -23,7 +24,7 @@ const PAYMENT_METHOD = {
   WALLET: 5,
   CASH_ON_DELIVERY: 6,
   STRIPE: 7,
-  PAYPAL: 8
+  // PAYPAL: 8  // Removed as per requirement
 };
 
 // Human-readable method names (for API compatibility)
@@ -35,7 +36,7 @@ const PAYMENT_METHOD_NAME = {
   5: 'wallet',
   6: 'cash_on_delivery',
   7: 'stripe',
-  8: 'paypal'
+  // 8: 'paypal'  // Removed
 };
 
 // Display labels (for UI)
@@ -47,7 +48,7 @@ const PAYMENT_METHOD_DISPLAY = {
   5: 'Digital Wallet',
   6: 'Cash on Delivery',
   7: 'Stripe',
-  8: 'PayPal'
+  // 8: 'PayPal'  // Removed
 };
 
 // Method descriptions
@@ -59,7 +60,7 @@ const PAYMENT_METHOD_DESCRIPTION = {
   5: 'Pay using digital wallets (Paytm, PhonePe, Google Pay, etc.)',
   6: 'Pay with cash when the order is delivered',
   7: 'Pay securely using Stripe payment gateway',
-  8: 'Pay using your PayPal account'
+  // 8: 'Pay using your PayPal account'  // Removed
 };
 
 // Processing fees (percentage)
@@ -71,11 +72,11 @@ const PAYMENT_METHOD_FEE = {
   5: 1.5,    // 1.5% for wallet
   6: 0,      // No fee for COD
   7: 2.9,    // 2.9% for Stripe
-  8: 3.5     // 3.5% for PayPal
+  // 8: 3.5  // 3.5% for PayPal - Removed
 };
 
 // Online payment methods (require immediate processing)
-const ONLINE_PAYMENT_METHODS = [1, 2, 3, 4, 5, 7, 8];
+const ONLINE_PAYMENT_METHODS = [1, 2, 3, 4, 5, 7]; // All except COD
 
 // Offline payment methods
 const OFFLINE_PAYMENT_METHODS = [6];
@@ -178,7 +179,7 @@ function isOfflinePayment(code) {
  * @returns {boolean} True if valid
  */
 function isValidPaymentMethod(code) {
-  return code >= 1 && code <= 8;
+  return code >= 1 && code <= 7;
 }
 
 /**

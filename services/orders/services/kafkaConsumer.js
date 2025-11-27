@@ -7,11 +7,10 @@
  * @module services/kafkaConsumer
  */
 
-const { kafka } = require('../config/kafka');
+const { kafka, publishEvent } = require('../config/kafka');
 const Order = require('../models/Order');
 const { ORDER_STATUS } = require('../constants/orderStatus');
 const { PAYMENT_STATUS_CODE } = require('../constants/paymentStatus');
-const { publishEvent } = require('./kafkaProducer');
 const mongoose = require('mongoose');
 
 // Create consumer instance
@@ -109,7 +108,8 @@ async function startConsumer() {
 /**
  * Handle payment.initiated event
  *
- * Updates order status to PROCESSING when payment is initiated
+ * Creates order when payment is initiated for Stripe payments.
+ * For COD payments, orders are created directly by the frontend.
  *
  * @param {Object} event - Payment initiated event
  */
@@ -119,38 +119,75 @@ async function handlePaymentInitiated(event) {
   try {
     await session.startTransaction();
 
-    const { orderId, paymentId, amount } = event.data;
+    const { orderId, paymentId, userId, items, amount, currency, paymentMethod, shippingAddress } = event.data;
 
-    console.log('[Kafka Consumer] Handling payment initiated for order:', orderId);
+    console.log('[Kafka Consumer] Handling payment initiated:', {
+      orderId,
+      paymentId,
+      userId,
+      itemCount: items?.length,
+      hasShippingAddress: !!shippingAddress
+    });
 
-    // Find order
-    const order = await Order.findById(orderId).session(session);
+    // Check if order already exists
+    const existingOrder = await Order.findById(orderId).session(session);
 
-    if (!order) {
-      console.error('[Kafka Consumer] Order not found:', orderId);
+    if (existingOrder) {
+      console.log('[Kafka Consumer] Order already exists:', orderId);
       await session.abortTransaction();
       return;
     }
 
-    // Update order to PROCESSING
-    if (order.status === ORDER_STATUS.PENDING) {
-      order.status = ORDER_STATUS.PROCESSING;
-      order.paymentStatus = PAYMENT_STATUS_CODE.PENDING;
+    // Generate order number in same format as frontend
+    const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
 
-      await order.save({ session });
+    // Create order from payment.initiated event (for Stripe payments)
+    const order = new Order({
+      _id: orderId,
+      userId,
+      orderNumber,
+      items: items.map(item => ({
+        productId: item.productId,
+        productName: item.productName,
+        quantity: item.quantity,
+        price: item.price
+      })),
+      totalAmount: amount,
+      status: ORDER_STATUS.PENDING,
+      paymentStatus: PAYMENT_STATUS_CODE.PENDING, // Start as PENDING, will be updated to PAID when payment.completed event arrives
+      paymentMethod: paymentMethod,
+      // Include shipping address if provided in the event
+      shippingAddress: shippingAddress || undefined,
+      metadata: {
+        paymentId,
+        sagaId: event.metadata?.correlationId,
+        createdVia: 'payment-saga'
+      }
+    });
 
-      console.log('[Kafka Consumer] Order status updated to PROCESSING:', orderId);
+    await order.save({ session });
 
-      // Publish order.updated event
-      await publishEvent('order.updated', {
-        eventType: 'order.updated',
-        orderId: orderId.toString(),
-        userId: order.userId,
-        status: order.status,
-        paymentStatus: order.paymentStatus,
-        correlationId: event.metadata?.correlationId
-      }, orderId.toString());
-    }
+    console.log('[Kafka Consumer] Order created from payment.initiated event:', {
+      orderId: order._id,
+      orderNumber: order.orderNumber,
+      status: 'PENDING',
+      paymentStatus: 'PENDING',
+      hasShippingAddress: !!order.shippingAddress
+    });
+
+    // Publish order.created event for other services (e.g., Product Service for inventory)
+    await publishEvent('order.created', {
+      eventType: 'ORDER_CREATED',
+      orderId: order._id.toString(),
+      userId: order.userId,
+      orderNumber: order.orderNumber,
+      totalAmount: order.totalAmount,
+      items: order.items,
+      createdAt: order.createdAt,
+      correlationId: event.metadata?.correlationId
+    }, order._id.toString());
+
+    console.log('[Kafka Consumer] order.created event published');
 
     await session.commitTransaction();
   } catch (error) {
@@ -177,6 +214,13 @@ async function handlePaymentCompleted(event) {
 
     const { orderId, paymentId, amount, transactionId } = event.data;
 
+    console.log('[Kafka Consumer] 🎉🎉🎉 PAYMENT.COMPLETED EVENT RECEIVED! 🎉🎉🎉',event,{session});
+    console.log('[Kafka Consumer] Event data:', {
+      orderId,
+      paymentId,
+      amount,
+      transactionId
+    });
     console.log('[Kafka Consumer] Handling payment completed for order:', orderId);
 
     // Find order
@@ -192,6 +236,7 @@ async function handlePaymentCompleted(event) {
     order.status = ORDER_STATUS.PROCESSING; // Or ORDER_STATUS.CONFIRMED if you have it
     order.paymentStatus = PAYMENT_STATUS_CODE.PAID;
 
+    console.log("PAID: 2", order.paymentStatus)
     // You might want to add payment reference to order
     if (!order.metadata) {
       order.metadata = {};
@@ -204,6 +249,8 @@ async function handlePaymentCompleted(event) {
     await order.save({ session });
 
     console.log('[Kafka Consumer] Order confirmed, payment status updated to PAID:', orderId);
+
+
 
     // Publish order.confirmed event
     await publishEvent('order.confirmed', {

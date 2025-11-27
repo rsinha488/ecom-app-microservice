@@ -357,9 +357,11 @@ exports.createOrder = async (req, res) => {
     // Save order to database
     const newOrder = await order.save();
 
-    // Emit order created event for real-time notifications (WebSocket)
-    // This triggers WebSocket notifications to admin dashboard
-    orderEvents.emit(ORDER_EVENTS.CREATED, newOrder);
+    if (paymentMethod === 6) {// paymentMethod = CoD(6) only then realtime update on order creation
+      // Emit order created event for real-time notifications (WebSocket)
+      // This triggers WebSocket notifications to admin dashboard
+      orderEvents.emit(ORDER_EVENTS.CREATED, newOrder);
+    }
 
     // Publish to Kafka for inter-service communication (async, non-blocking)
     // This triggers stock reservation in Products service
@@ -637,7 +639,7 @@ exports.updateOrderStatus = async (req, res) => {
 
     // Update order status
     const order = await Order.findByIdAndUpdate(
-      id, update, 
+      id, update,
       { new: true, runValidators: true }
     );
 

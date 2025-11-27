@@ -442,11 +442,17 @@ export default function OrdersPage() {
                         <FiMapPin className="mr-2 h-4 w-4 text-indigo-600" />
                         Shipping Address
                       </h3>
-                      <p className="text-sm text-gray-700 leading-relaxed">
-                        {order.shippingAddress.street}<br />
-                        {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}<br />
-                        {order.shippingAddress.country}
-                      </p>
+                      {order.shippingAddress ? (
+                        <p className="text-sm text-gray-700 leading-relaxed">
+                          {order.shippingAddress.street}<br />
+                          {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}<br />
+                          {order.shippingAddress.country}
+                        </p>
+                      ) : (
+                        <p className="text-sm text-gray-500 italic">
+                          Shipping address not available
+                        </p>
+                      )}
                     </div>
                     <div className="bg-white p-4 rounded-xl shadow-sm">
                       <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center">

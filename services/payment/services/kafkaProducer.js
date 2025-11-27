@@ -85,7 +85,9 @@ async function publishPaymentInitiated(payment, metadata = {}) {
         })),
         customerEmail: payment.customerEmail,
         stripeSessionId: payment.stripeDetails?.sessionId,
-        initiatedAt: payment.initiatedAt || payment.createdAt
+        initiatedAt: payment.initiatedAt || payment.createdAt,
+        // Include shipping address from metadata (not stored in Payment model)
+        shippingAddress: metadata.shippingAddress || null
       },
       {
         ...metadata,
@@ -116,6 +118,10 @@ async function publishPaymentInitiated(payment, metadata = {}) {
  */
 async function publishPaymentCompleted(payment, metadata = {}) {
   try {
+    console.log('[Kafka Producer] 🚀 Publishing payment.completed event...');
+    console.log('[Kafka Producer] Payment ID:', payment._id.toString());
+    console.log('[Kafka Producer] Order ID:', payment.orderId.toString());
+
     const event = createPaymentEvent(
       PAYMENT_EVENTS.COMPLETED,
       {
@@ -143,14 +149,21 @@ async function publishPaymentCompleted(payment, metadata = {}) {
       }
     );
 
+    console.log('[Kafka Producer] Event created:', {
+      eventType: event.eventType,
+      eventId: event.eventId
+    });
+
     await publishEvent('payment.completed', event, {
       key: payment.orderId.toString()
     });
 
+    console.log('[Kafka Producer] ✅✅✅ PAYMENT.COMPLETED EVENT SENT TO KAFKA! ✅✅✅');
     console.log('[SAGA] Payment completed event published:', payment._id);
     return event;
   } catch (error) {
-    console.error('[Kafka] Error publishing payment completed:', error);
+    console.error('[Kafka Producer] ❌❌❌ ERROR publishing payment completed:', error);
+    console.error('[Kafka Producer] Stack:', error.stack);
     // Critical event - should be retried
     throw error;
   }

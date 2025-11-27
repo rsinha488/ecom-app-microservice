@@ -328,26 +328,62 @@ exports.getPaymentsByOrderId = async (req, res) => {
  */
 exports.createCheckoutSession = async (req, res) => {
   try {
+    console.log('[Payment Controller] Received checkout request');
+    console.log('[Payment Controller] Request body keys:', Object.keys(req.body));
+    console.log('[Payment Controller] User:', req.user?._id);
+
     const {
-      orderId,
-      userId,
       items,
       amount,
       currency = 'USD',
       customerEmail,
       successUrl,
-      cancelUrl
+      cancelUrl,
+      paymentMethod,
+      shippingAddress
     } = req.body;
+
+    // Get userId from authenticated user (handle different JWT token structures)
+    const userId = req.user?._id || req.user?.sub || req.user?.userId || req.user?.id;
+
+    if (!userId) {
+      console.error('[Payment Controller] No user ID found in token:', req.user);
+      return res.status(401).json(
+        ErrorResponse.unauthorized('User ID not found in token')
+      );
+    }
+
+    // Generate orderId for Stripe payments (SAGA will create the order)
+    const orderId = new mongoose.Types.ObjectId();
+
+    console.log('[Payment Controller] Parsed data:', {
+      hasItems: !!items,
+      itemsCount: items?.length,
+      amount,
+      currency,
+      hasCustomerEmail: !!customerEmail,
+      customerEmail,
+      paymentMethod,
+      userId: userId.toString(),
+      orderId: orderId.toString()
+    });
 
     // Validate required fields
     const missingFields = {};
-    if (!orderId) missingFields.orderId = 'Order ID is required';
-    if (!userId) missingFields.userId = 'User ID is required';
     if (!items || items.length === 0) missingFields.items = 'Order items are required';
     if (!amount || amount <= 0) missingFields.amount = 'Valid payment amount is required';
     if (!customerEmail) missingFields.customerEmail = 'Customer email is required';
 
     if (Object.keys(missingFields).length > 0) {
+      console.error('[Payment Controller] Validation failed:', missingFields);
+      console.error('[Payment Controller] Received data:', {
+        hasItems: !!items,
+        itemsLength: items?.length,
+        amount,
+        hasCustomerEmail: !!customerEmail,
+        userId,
+        orderId: orderId.toString()
+      });
       return res.status(400).json(
         ErrorResponse.validation('Required fields are missing', missingFields)
       );
@@ -368,6 +404,10 @@ exports.createCheckoutSession = async (req, res) => {
     const processingFee = calculatePaymentFee(PAYMENT_METHOD.STRIPE, amount);
     const netAmount = amount - processingFee;
 
+    // Calculate subtotal from items
+    const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const taxAndShipping = amount - subtotal;
+
     // Create line items for Stripe
     const lineItems = items.map(item => ({
       price_data: {
@@ -380,6 +420,21 @@ exports.createCheckoutSession = async (req, res) => {
       },
       quantity: item.quantity
     }));
+
+    // Add tax and shipping as a separate line item if applicable
+    if (taxAndShipping > 0) {
+      lineItems.push({
+        price_data: {
+          currency: currency.toLowerCase(),
+          product_data: {
+            name: 'Tax & Shipping',
+            description: 'Taxes and shipping fees'
+          },
+          unit_amount: Math.round(taxAndShipping * 100) // Convert to cents
+        },
+        quantity: 1
+      });
+    }
 
     // Create Stripe checkout session
     const stripeSession = await stripe.checkout.sessions.create({
@@ -414,12 +469,14 @@ exports.createCheckoutSession = async (req, res) => {
     };
 
     // Generate SAGA metadata for distributed tracing
+    // Include shippingAddress in metadata so it can be passed to Order Service
     const metadata = {
       correlationId: generateCorrelationId(),
       userId: userId.toString(),
       orderId: orderId.toString(),
       traceId: req.headers['x-trace-id'] || generateCorrelationId(),
-      source: 'checkout-api'
+      source: 'checkout-api',
+      shippingAddress: shippingAddress || null
     };
 
     console.log('[Payment Controller] Executing payment SAGA:', {
@@ -497,13 +554,18 @@ exports.handleStripeWebhook = async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
+  console.log('[Webhook] ========== STRIPE WEBHOOK RECEIVED ==========');
+  console.log('[Webhook] Signature present:', !!sig);
+  console.log('[Webhook] Webhook secret configured:', !!endpointSecret);
+
   let event;
 
   try {
     // Verify webhook signature for security
     event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    console.log('[Webhook] ✅ Signature verified successfully');
   } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
+    console.error('[Webhook] ❌ Signature verification failed:', err.message);
     return res.status(400).json(
       ErrorResponse.validation(
         'Webhook signature verification failed',
@@ -516,12 +578,16 @@ exports.handleStripeWebhook = async (req, res) => {
   session.startTransaction();
 
   try {
-    console.log('Processing Stripe webhook event:', event.type);
+    console.log('[Webhook] 📨 Processing event type:', event.type);
+    console.log('[Webhook] Event ID:', event.id);
 
     // Handle different event types
     switch (event.type) {
       case 'checkout.session.completed': {
+        console.log('[Webhook] 🛒 Checkout Session Completed event received');
         const checkoutSession = event.data.object;
+        console.log('[Webhook] Checkout Session ID:', checkoutSession.id);
+        console.log('[Webhook] Payment Intent ID:', checkoutSession.payment_intent);
 
         // Find payment by Stripe session ID
         const payment = await Payment.findOne({
@@ -529,12 +595,12 @@ exports.handleStripeWebhook = async (req, res) => {
         });
 
         if (!payment) {
-          console.error('Payment not found for session:', checkoutSession.id);
-          await session.abortTransaction();
-          return res.status(404).json(
-            ErrorResponse.notFound('Payment', checkoutSession.id)
-          );
+          console.error('[Webhook] ❌ Payment not found for session:', checkoutSession.id);
+          throw new Error(`Payment not found for session: ${checkoutSession.id}`);
         }
+
+        console.log('[Webhook] ✅ Payment found:', payment._id);
+        console.log('[Webhook] Updating payment with payment intent details...');
 
         // Update payment with Stripe details
         payment.status = PAYMENT_STATUS.PROCESSING;
@@ -543,36 +609,103 @@ exports.handleStripeWebhook = async (req, res) => {
         payment.transactionId = checkoutSession.payment_intent;
 
         await payment.save({ session });
+        console.log('[Webhook] ✅ Payment updated with PROCESSING status');
+        console.log('[Webhook] ⏳ Waiting for payment_intent.succeeded event...');
         break;
       }
 
       case 'payment_intent.succeeded': {
+        console.log('[Webhook] 💰 Payment Intent Succeeded event received');
         const paymentIntent = event.data.object;
+        console.log('[Webhook] Payment Intent ID:', paymentIntent.id);
 
         // Find payment by payment intent ID
         const payment = await Payment.findOne({
           'stripeDetails.paymentIntentId': paymentIntent.id
         });
 
-        if (payment) {
-          payment.status = PAYMENT_STATUS.COMPLETED;
-          payment.stripeDetails.chargeId = paymentIntent.latest_charge;
-          payment.completedAt = new Date();
-
-          await payment.save({ session });
-
-          console.log('[Webhook] Payment completed, triggering SAGA completion:', payment._id);
-
-          // Continue SAGA flow - publish completion event
-          const metadata = {
-            correlationId: payment.metadata?.get('sagaId') || generateCorrelationId(),
-            userId: payment.userId.toString(),
-            orderId: payment.orderId.toString(),
-            source: 'stripe-webhook'
-          };
-
-          await handlePaymentCompletion(payment, metadata);
+        if (!payment) {
+          console.error('[Webhook] ❌ Payment not found for payment intent:', paymentIntent.id);
+          console.log('[Webhook] ⚠️ Skipping payment_intent.succeeded - no matching payment record');
+          break;
         }
+
+        console.log('[Webhook] ✅ Payment found:', payment._id);
+        console.log('[Webhook] Updating payment status to COMPLETED...');
+
+        payment.status = PAYMENT_STATUS.COMPLETED;
+        payment.stripeDetails.chargeId = paymentIntent.latest_charge;
+        payment.completedAt = new Date();
+
+        await payment.save({ session });
+        console.log('[Webhook] ✅ Payment saved with COMPLETED status');
+
+        console.log('[Webhook] 🚀 Triggering SAGA completion for payment:', payment._id);
+
+        // Continue SAGA flow - publish completion event
+        const metadata = {
+          correlationId: payment.metadata?.get('sagaId') || generateCorrelationId(),
+          userId: payment.userId.toString(),
+          orderId: payment.orderId.toString(),
+          source: 'stripe-webhook'
+        };
+
+        console.log('[Webhook] SAGA metadata:', metadata);
+
+        await handlePaymentCompletion(payment, metadata);
+
+        console.log('[Webhook] ✅ SAGA completion handler executed');
+        break;
+      }
+
+      case 'charge.succeeded': {
+        console.log('[Webhook] 💳 Charge Succeeded event received');
+        const charge = event.data.object;
+        console.log('[Webhook] Charge ID:', charge.id);
+        console.log('[Webhook] Payment Intent ID:', charge.payment_intent);
+
+        // Find payment by payment intent ID
+        const payment = await Payment.findOne({
+          'stripeDetails.paymentIntentId': charge.payment_intent
+        });
+
+        if (!payment) {
+          console.error('[Webhook] ❌ Payment not found for charge payment intent:', charge.payment_intent);
+          console.log('[Webhook] ⚠️ Skipping charge.succeeded - no matching payment record');
+          break;
+        }
+
+        // Only complete if not already completed
+        if (payment.status === PAYMENT_STATUS.COMPLETED) {
+          console.log('[Webhook] ⚠️ Payment already completed, skipping');
+          break;
+        }
+
+        console.log('[Webhook] ✅ Payment found:', payment._id);
+        console.log('[Webhook] Completing payment via charge.succeeded event...');
+
+        payment.status = PAYMENT_STATUS.COMPLETED;
+        payment.stripeDetails.chargeId = charge.id;
+        payment.completedAt = new Date();
+
+        await payment.save({ session });
+        console.log('[Webhook] ✅ Payment completed via charge.succeeded');
+
+        console.log('[Webhook] 🚀 Triggering SAGA completion for payment:', payment._id);
+
+        // Continue SAGA flow - publish completion event
+        const chargeMetadata = {
+          correlationId: payment.metadata?.get('sagaId') || generateCorrelationId(),
+          userId: payment.userId.toString(),
+          orderId: payment.orderId.toString(),
+          source: 'stripe-webhook-charge'
+        };
+
+        console.log('[Webhook] SAGA metadata:', chargeMetadata);
+
+        await handlePaymentCompletion(payment, chargeMetadata);
+
+        console.log('[Webhook] ✅ SAGA completion handler executed');
         break;
       }
 
