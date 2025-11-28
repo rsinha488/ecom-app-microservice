@@ -9,7 +9,7 @@ const productRoutesV1 = require('./routes/v1/productRoutes');
 const { validateVersion } = require('./middleware/apiVersion');
 const { initializeConsumer } = require('./services/kafkaConsumer');
 const { disconnectConsumer } = require('./config/kafka');
-const redisClient = require('../shared/config/redis');
+const redisClient = require('./config/redis');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
