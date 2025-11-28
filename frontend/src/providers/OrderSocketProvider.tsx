@@ -20,7 +20,7 @@ interface OrderSocketContextValue {
   lastEvent: OrderSocketEvent | null;
 }
 
-const OrderSocketContext = createContext<OrderSocketContextValue>({
+const OrderSocketContext = createContext<OrderSocketContextValue | undefined>({
   socket: null,
   isConnected: false,
   lastEvent: null,

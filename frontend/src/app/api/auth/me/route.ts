@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
+export const dynamic = "force-dynamic";
+
 const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:3000';
 
 export async function GET(request: NextRequest) {

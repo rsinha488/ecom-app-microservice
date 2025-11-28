@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+export const dynamic = "force-dynamic";
 
 const CATEGORIES_API_URL = process.env.NEXT_PUBLIC_CATEGORIES_URL || 'http://localhost:3002';
 
