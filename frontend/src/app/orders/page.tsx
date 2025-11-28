@@ -51,7 +51,7 @@ export default function OrdersPage() {
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   // Use global WebSocket connection from context
-  const {  lastEvent } = useOrderSocket();
+  const { lastEvent } = useOrderSocket();
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -162,7 +162,7 @@ export default function OrdersPage() {
   if (loading) {
     return (
       // <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 ">
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/70 backdrop-blur-sm">  
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/70 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-600"></div>
@@ -471,6 +471,10 @@ export default function OrdersPage() {
                             {getPaymentStatusDisplay(order.paymentStatus)}
                           </span>
                         </p>
+                        {order.paymentMethod === 7 && order?.metadata?.transactionId && <p>
+                          <span className="font-medium">Payment Id:</span>{' '}
+                          {order?.metadata?.transactionId || ""}
+                        </p>}
                         {order.trackingNumber && (
                           <p className="flex items-center space-x-2 mt-2 pt-2 border-t border-gray-200">
                             <FiTruck className="h-4 w-4 text-indigo-600" />

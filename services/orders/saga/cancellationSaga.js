@@ -135,10 +135,10 @@ function isStockAlreadyReleased(order) {
   const sagaState = order.metadata?.cancellationSagaState;
 
   const isReleased = stockReleased ||
-                     sagaState === SAGA_STATE.STOCK_RELEASED ||
-                     sagaState === SAGA_STATE.REFUND_REQUESTED ||
-                     sagaState === SAGA_STATE.REFUND_COMPLETED ||
-                     sagaState === SAGA_STATE.COMPLETED;
+    sagaState === SAGA_STATE.STOCK_RELEASED ||
+    sagaState === SAGA_STATE.REFUND_REQUESTED ||
+    sagaState === SAGA_STATE.REFUND_COMPLETED ||
+    sagaState === SAGA_STATE.COMPLETED;
 
   if (isReleased) {
     console.log(`[SAGA] Stock already released for order ${order.orderNumber} (stockReleased: ${stockReleased}, state: ${sagaState})`);
@@ -157,9 +157,9 @@ function isRefundAlreadyProcessed(order) {
   const sagaState = order.metadata?.cancellationSagaState;
 
   const isProcessed = refundRequested ||
-                      sagaState === SAGA_STATE.REFUND_REQUESTED ||
-                      sagaState === SAGA_STATE.REFUND_COMPLETED ||
-                      sagaState === SAGA_STATE.COMPLETED;
+    sagaState === SAGA_STATE.REFUND_REQUESTED ||
+    sagaState === SAGA_STATE.REFUND_COMPLETED ||
+    sagaState === SAGA_STATE.COMPLETED;
 
   if (isProcessed) {
     console.log(`[SAGA] Refund already processed for order ${order.orderNumber} (refundRequested: ${refundRequested}, state: ${sagaState})`);
@@ -230,9 +230,10 @@ async function executeCancellationSaga(orderId, options = {}) {
       cancellationStartedAt: new Date()
     });
 
-    // STEP 2: Cancel Order (update status to CANCELLED)
+    // STEP 2: Cancel Order (update status to CANCELLED and payment status to refunded)
     await session.withTransaction(async () => {
       order.status = ORDER_STATUS.CANCELLED;
+      order.paymentStatus = order.paymentMethod === 6 ? PAYMENT_STATUS_CODE.PENDING : PAYMENT_STATUS_CODE.REFUNDED;
       order.cancelledAt = new Date();
       await order.save({ session });
     });
@@ -264,7 +265,7 @@ async function executeCancellationSaga(orderId, options = {}) {
 
     // STEP 4: Request Refund (only for Stripe PAID orders, idempotent)
     const requiresRefund = order.paymentMethod === PAYMENT_METHOD_CODE.STRIPE &&
-                          order.paymentStatus === PAYMENT_STATUS_CODE.PAID;
+      order.paymentStatus === PAYMENT_STATUS_CODE.PAID;
 
     if (requiresRefund) {
       if (!isRefundAlreadyProcessed(order)) {

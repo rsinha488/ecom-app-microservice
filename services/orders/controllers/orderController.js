@@ -1012,7 +1012,7 @@ exports.cancelOrder = async (req, res) => {
 
     const sagaResult = await executeCancellationSaga(id, {
       userId: requestingUserId.toString(),
-      reason: req.body?.reason || 'Cancelled by customer'
+      reason: req.body?.reason || `Cancelled by ${isAdmin ? 'Admin' : 'Customer'}`
     });
 
     if (!sagaResult.success) {
