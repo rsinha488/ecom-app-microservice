@@ -9,7 +9,12 @@ const productRoutesV1 = require('./routes/v1/productRoutes');
 const { validateVersion } = require('./middleware/apiVersion');
 const { initializeConsumer } = require('./services/kafkaConsumer');
 const { disconnectConsumer } = require('./config/kafka');
-const redisClient = require('./config/redis');
+
+// if (process.env.NODE_ENV !== "production") {
+  const redisClient = require("./config/upstashRedis"); // Upstash Redis
+// } else {
+//   const redisClient = require("./config/redis"); // Local Redis
+// }
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -27,7 +32,7 @@ if (isProduction) {
 }
 
 // Rate limiter middleware to prevent excessive requests (DDoS / brute-force protection)
-const limiter = rateLimit({  
+const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,   // Time window for rate limiting (15 minutes)
 
   // Maximum number of requests allowed per IP within the time window
