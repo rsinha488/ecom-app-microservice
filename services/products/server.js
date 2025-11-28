@@ -11,10 +11,12 @@ const { initializeConsumer } = require('./services/kafkaConsumer');
 const { disconnectConsumer } = require('./config/kafka');
 
 // if (process.env.NODE_ENV !== "production") {
-  const redisClient = require("./config/upstashRedis"); // Upstash Redis
+const redisClient = require("./config/upstashRedis.js"); // Upstash Redis
 // } else {
 //   const redisClient = require("./config/redis"); // Local Redis
 // }
+
+console.log(redisClient, "redisClient")
 
 const app = express();
 const PORT = process.env.PORT || 3001;
