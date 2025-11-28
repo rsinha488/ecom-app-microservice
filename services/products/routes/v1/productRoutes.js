@@ -7,7 +7,7 @@ const {
   cacheMiddleware,
   detailCacheMiddleware,
   cacheInvalidationMiddleware
-} = require('../../../shared/middleware/cache');
+} = require('../../middleware/cache');
 
 // Apply version headers
 router.use(setVersionHeaders);
