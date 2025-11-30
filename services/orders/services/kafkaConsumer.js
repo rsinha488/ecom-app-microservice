@@ -7,11 +7,17 @@
  * @module services/kafkaConsumer
  */
 
-const { kafka, publishEvent } = require('../config/kafka');
 const Order = require('../models/Order');
 const { ORDER_STATUS } = require('../constants/orderStatus');
 const { PAYMENT_STATUS_CODE } = require('../constants/paymentStatus');
 const mongoose = require('mongoose');
+// const { kafka, publishEvent } = require('../config/kafka');
+
+if (process.env.NODE_ENV === "development") {
+  const { kafka, publishEvent } = require('../config/kafka');
+} else {
+  const { kafka, publishEvent } = require('../config/redPandaKafka');
+}
 
 // Create consumer instance
 const consumer = kafka.consumer({
@@ -214,7 +220,7 @@ async function handlePaymentCompleted(event) {
 
     const { orderId, paymentId, amount, transactionId } = event.data;
 
-    console.log('[Kafka Consumer] 🎉🎉🎉 PAYMENT.COMPLETED EVENT RECEIVED! 🎉🎉🎉',event,{session});
+    console.log('[Kafka Consumer] 🎉🎉🎉 PAYMENT.COMPLETED EVENT RECEIVED! 🎉🎉🎉', event, { session });
     console.log('[Kafka Consumer] Event data:', {
       orderId,
       paymentId,

@@ -7,8 +7,19 @@
  * @module services/kafkaConsumer
  */
 
-const { subscribeToTopics, startConsuming } = require('../config/kafka');
 const { reserveStock, releaseStock } = require('./stockManager');
+
+
+let subscribeToTopics;
+let startConsuming;
+
+if (process.env.NODE_ENV === "development") {
+  ({ subscribeToTopics, startConsuming } = require('../config/kafka'));
+  console.log("Using local KafkaJS config");
+} else {
+  ({ subscribeToTopics, startConsuming } = require('../config/redPandaKafka'));
+  console.log("Using Redpanda Kafka config");
+}
 
 // Topics to subscribe to
 const TOPICS = {

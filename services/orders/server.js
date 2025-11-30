@@ -9,8 +9,16 @@ const connectDB = require('./config/db');
 const orderRoutesV1 = require('./routes/v1/orderRoutes');
 const { validateVersion } = require('./middleware/apiVersion');
 const { initializeSocket } = require('./config/socket');
-const { initializeProducer, createTopics, disconnectProducer } = require('./config/kafka');
+// const { initializeProducer, createTopics, disconnectProducer } = require('./config/kafka');
 const { startConsumer, disconnectConsumer } = require('./services/kafkaConsumer');
+
+if (process.env.NODE_ENV === development) {
+
+const { initializeProducer, createTopics, disconnectProducer } = require('./config/kafka');
+} else {
+  const { subscribeToTopics, startConsuming } = require('../config/redPandaKafka');
+
+}
 
 const app = express();
 const server = http.createServer(app);

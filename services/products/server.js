@@ -8,13 +8,25 @@ const connectDB = require('./config/db');
 const productRoutesV1 = require('./routes/v1/productRoutes');
 const { validateVersion } = require('./middleware/apiVersion');
 const { initializeConsumer } = require('./services/kafkaConsumer');
-const { disconnectConsumer } = require('./config/kafka');
+// const { disconnectConsumer } = require('./config/kafka');
 
-// if (process.env.NODE_ENV !== "production") {
-const redisClient = require("./config/upstashRedis.js"); // Upstash Redis
-// } else {
-//   const redisClient = require("./config/redis"); // Local Redis
-// }
+let disconnectConsumer;
+
+if (process.env.NODE_ENV === "development") {
+  ({ disconnectConsumer } = require('./config/kafka'));
+  console.log("Using Local Kafka (KafkaJS)");
+} else {
+  ({ disconnectConsumer } = require('./config/redPandaKafka'));
+  console.log("Using Redpanda Cloud Kafka");
+}
+
+let redisClient;
+
+if (process.env.NODE_ENV === "development") {
+  redisClient = require("./config/redis"); // Local Redis
+} else {
+  redisClient = require("./config/upstashRedis.js"); // Upstash Redis
+}
 
 console.log(redisClient, "redisClient")
 

@@ -7,8 +7,15 @@
  * @module services/kafkaProducer
  */
 
-const { publishEvent } = require('../config/kafka');
 const { ORDER_STATUS } = require('../constants/orderStatus');
+// const { publishEvent } = require('../config/kafka');
+
+if (process.env.NODE_ENV === "development") {
+  const { publishEvent } = require('../config/kafka');
+} else {
+  const { publishEvent } = require('../config/redPandaKafka');
+
+}
 
 // Kafka topic names
 const TOPICS = {
